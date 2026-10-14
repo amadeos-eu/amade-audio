@@ -16,7 +16,7 @@ public interface HttpFetcher {
     Optional<byte[]> get(URI uri, String accept) throws IOException;
 
     static HttpFetcher system() {
-        HttpClient client = HttpClient.newBuilder()
+        HttpClient client = org.datazuul.amadeos.audio.service.net.NetworkProxy.INSTANCE.httpClient()
                 .connectTimeout(Duration.ofSeconds(8))
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();

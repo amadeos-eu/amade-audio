@@ -1,6 +1,7 @@
 package org.datazuul.amadeos.audio.repository;
 
 import org.datazuul.amadeos.audio.domain.AudioPreferences;
+import org.datazuul.amadeos.audio.domain.ProxySettings;
 import org.datazuul.amadeos.audio.domain.RecordingSettings;
 import org.datazuul.amadeos.audio.domain.SourceId;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ class PreferencesRepositoryTest {
         assertEquals(dir.resolve("Music/Radio"), p.recording().directory());
         assertEquals("theme", p.lcdColor());
         assertFalse(p.recordingNoticeShown());
+        assertEquals(ProxySettings.Mode.SYSTEM, p.proxy().mode());
     }
 
     @Test
@@ -34,7 +36,8 @@ class PreferencesRepositoryTest {
                 .withRecording(new RecordingSettings(dir.resolve("rec"), "{title}", true, 30))
                 .withLcdColor("amber")
                 .withRecordingNoticeShown()
-                .withLastFolder(dir.resolve("music"));
+                .withLastFolder(dir.resolve("music"))
+                .withProxy(new ProxySettings(ProxySettings.Mode.MANUAL, "proxy.example", 8080, "ralf", "localhost, .lan"));
         repo.save(p);
         AudioPreferences loaded = repo.load();
         assertEquals(0.25f, loaded.volume(SourceId.WEBRADIO), 0.001f);
@@ -45,5 +48,6 @@ class PreferencesRepositoryTest {
         assertEquals("amber", loaded.lcdColor());
         assertTrue(loaded.recordingNoticeShown());
         assertEquals(dir.resolve("music"), loaded.lastFolder());
+        assertEquals(p.proxy(), loaded.proxy());
     }
 }

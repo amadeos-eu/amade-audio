@@ -37,7 +37,7 @@ final class HeaderRack extends RackPanel {
         popup.add(item("Open Files...", p::openFiles));
         popup.add(item("Open Folder...", p::openFolder));
         popup.addSeparator();
-        popup.add(item("Options...", () -> p.openOptions("Recording")));
+        popup.add(item("Settings...", () -> p.openOptions("Recording")));
         popup.add(item("About Audio Station", p::about));
         popup.addSeparator();
         popup.add(item("Quit", p::quit));

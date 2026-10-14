@@ -30,7 +30,7 @@ public final class RadioBrowserClient {
             "https://de1.api.radio-browser.info", "https://de2.api.radio-browser.info",
             "https://fi1.api.radio-browser.info", "https://nl1.api.radio-browser.info");
 
-    private final HttpClient http = HttpClient.newBuilder()
+    private final HttpClient http = org.datazuul.amadeos.audio.service.net.NetworkProxy.INSTANCE.httpClient()
             .connectTimeout(Duration.ofSeconds(5))
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();

@@ -1,5 +1,6 @@
 package org.datazuul.amadeos.audio.bootstrap;
 
+import org.datazuul.amadeos.audio.service.net.NetworkProxy;
 import org.datazuul.amadeos.audio.ui.main.MainPresenter;
 import org.datazuul.amadeos.commons.app.AmadeApplication;
 import org.datazuul.amadeos.commons.app.AppInfo;
@@ -14,6 +15,8 @@ public final class AmadeAudioApplication {
     }
 
     public static void main(String[] args) {
+        // Before the first connection: the proxy from the settings is applied once they are loaded.
+        NetworkProxy.INSTANCE.install();
         AmadeApplication.launch(APP, injector -> injector.getInstance(MainPresenter.class).start(List.of(args)),
                 new AudioModule());
     }

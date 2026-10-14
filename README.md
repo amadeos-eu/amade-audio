@@ -65,6 +65,22 @@ Press **Record** (●) while a station plays; press it again to stop. Right-clic
 
 Recordings are for private use only; amade-audio says so before the first recording.
 
+### Proxy
+
+Behind a proxy, open the menu (☰) → *Settings...* → category *Network*:
+
+- **Use the system proxy** (default): `https_proxy`, `http_proxy`, `all_proxy` and `no_proxy` from
+  the environment (also in upper case), e.g. `http://user:password@proxy.example:3128`.
+- **No proxy**: always connect directly.
+- **Manual proxy**: host and port for HTTP and HTTPS, optional user name and password, and hosts or
+  domains reached directly (`localhost, .intranet.example`). The password is kept in the keyring
+  (Secret Service via `secret-tool`), not in `audio.conf`.
+
+*Test Connection* tries the entered settings against radio-browser.info before saving them. The proxy
+applies to everything amade-audio fetches: radio streams and playlists, radio-browser.info,
+MusicBrainz, the Cover Art Archive and station logos. Basic authentication also works for HTTPS
+(the JDK switches it off for tunnels by default; amade-audio switches it back on).
+
 ## Architecture
 
 Java 21, Swing, Guice; same structure as [amade-pad](https://github.com/datazuul/amade-pad) and
@@ -84,6 +100,7 @@ only the CD rack uses native code, libcdio through JNA.
 | `service.cd` | `LibCdioDrive` (libcdio and libcdio-paranoia via JNA), `DiscId`, `CdPcmSource` |
 | `service.metadata` | `MusicBrainzClient`, `CdMetadataService`, `ArtworkService`, `MetadataCache` |
 | `service.mixer` | `SoundServer`: master, microphone and output through `wpctl` / `pactl` |
+| `service.net` | `NetworkProxy`: proxy selector and authenticator for all connections (system, none, manual) |
 | `service` | `PlaybackCoordinator` (active device), `Json` |
 | `ui.main` | frameless `MainWindow`, `HeaderRack`, `MainPresenter` |
 | `ui.rack.mixer`, `.cd`, `.player`, `.webradio` | rack panel, playlist view and presenter per device |

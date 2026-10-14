@@ -5,6 +5,8 @@ import org.datazuul.amadeos.audio.domain.SourceId;
 import org.datazuul.amadeos.audio.repository.PreferencesStore;
 import org.datazuul.amadeos.audio.service.PlaybackCoordinator;
 import org.datazuul.amadeos.audio.service.engine.AudioEngine;
+import org.datazuul.amadeos.audio.service.net.NetworkProxy;
+import org.datazuul.amadeos.commons.desktop.PasswordStore;
 import org.datazuul.amadeos.audio.ui.options.OptionsDialog;
 import org.datazuul.amadeos.audio.ui.playlist.PlaylistPanel;
 import org.datazuul.amadeos.audio.ui.rack.cd.CdPresenter;
@@ -41,6 +43,7 @@ public final class MainPresenter {
     private final PreferencesStore preferences;
     private final ExecutorService executor;
     private final EdtExecutor edt;
+    private final PasswordStore passwords;
     private final PlaylistPanel playlist = new PlaylistPanel();
     private HeaderRack header;
     private MainWindow window;
@@ -48,7 +51,7 @@ public final class MainPresenter {
     @Inject
     public MainPresenter(PlaybackCoordinator coordinator, AudioEngine engine, MixerPresenter mixer, CdPresenter cd,
                          PlayerPresenter player, WebRadioPresenter webRadio, PreferencesStore preferences,
-                         ExecutorService executor, EdtExecutor edt) {
+                         ExecutorService executor, EdtExecutor edt, PasswordStore passwords) {
         this.coordinator = coordinator;
         this.engine = engine;
         this.mixer = mixer;
@@ -58,12 +61,17 @@ public final class MainPresenter {
         this.preferences = preferences;
         this.executor = executor;
         this.edt = edt;
+        this.passwords = passwords;
     }
+
+    /** Key of the proxy password in the keyring. */
+    static final String PROXY_PASSWORD = "proxy";
 
     /** Builds and shows the window; arguments are files or folders to play. */
     public void start(List<String> args) {
         EdtExecutor.requireEdt();
         LcdPalette.setSetting(preferences.current().lcdColor());
+        applyProxy();
         header = new HeaderRack(this, this::isLit);
         playlist.addView(SourceId.CD, cd.header(), cd.listView());
         playlist.addView(SourceId.PLAYER, player.header(), player.listView());
@@ -146,12 +154,37 @@ public final class MainPresenter {
         }
     }
 
+    /** Applies the saved proxy now and the password from the keyring when it has been read. */
+    private void applyProxy() {
+        var proxy = preferences.current().proxy();
+        NetworkProxy.INSTANCE.configure(proxy, "");
+        if (proxy.user().isEmpty()) return;
+        executor.execute(() -> {
+            String password = passwords.lookup(PROXY_PASSWORD).orElse("");
+            NetworkProxy.INSTANCE.configure(preferences.current().proxy(), password);
+        });
+    }
+
     void openOptions(String page) {
-        new OptionsDialog(window, preferences.current(), page, prefs -> {
-            preferences.update(p -> prefs);
-            LcdPalette.setSetting(prefs.lcdColor());
-            window.repaint();
-        }).setVisible(true);
+        OptionsDialog dialog = new OptionsDialog(window, preferences.current(), page, NetworkProxy.INSTANCE.describe(),
+                (prefs, proxyPassword) -> {
+                    preferences.update(p -> prefs);
+                    LcdPalette.setSetting(prefs.lcdColor());
+                    window.repaint();
+                    NetworkProxy.INSTANCE.configure(prefs.proxy(), proxyPassword);
+                    executor.execute(() -> {
+                        if (proxyPassword.isEmpty() || prefs.proxy().user().isEmpty()) passwords.delete(PROXY_PASSWORD);
+                        else passwords.store(PROXY_PASSWORD, "amade-audio proxy " + prefs.proxy().host(), proxyPassword);
+                    });
+                }, (candidate, password) -> NetworkProxy.INSTANCE.test(candidate, password), executor, edt);
+        dialog.setProxyPassword(proxyPasswordForDialog());
+        dialog.setVisible(true);
+    }
+
+    private String proxyPasswordForDialog() {
+        var current = NetworkProxy.INSTANCE.endpoint(true);
+        return preferences.current().proxy().mode() == org.datazuul.amadeos.audio.domain.ProxySettings.Mode.MANUAL
+                ? current.map(NetworkProxy.Endpoint::password).orElse("") : "";
     }
 
     void minimize() {

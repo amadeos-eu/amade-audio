@@ -2,6 +2,7 @@ package org.datazuul.amadeos.audio.repository;
 
 import com.google.inject.Inject;
 import org.datazuul.amadeos.audio.domain.AudioPreferences;
+import org.datazuul.amadeos.audio.domain.ProxySettings;
 import org.datazuul.amadeos.audio.domain.RecordingSettings;
 import org.datazuul.amadeos.audio.domain.SourceId;
 import org.datazuul.amadeos.commons.config.AppDirectories;
@@ -60,7 +61,7 @@ public final class PreferencesRepository {
         return new AudioPreferences(volumes, number(p, "tone.bass", 0), number(p, "tone.treble", 0), hidden,
                 recording, p.getProperty("lcd.color", "theme"),
                 Boolean.parseBoolean(p.getProperty("recording.noticeShown", "false")),
-                path(p, "player.lastFolder", null));
+                path(p, "player.lastFolder", null), proxy(p));
     }
 
     public void save(AudioPreferences prefs) {
@@ -75,12 +76,30 @@ public final class PreferencesRepository {
         p.setProperty("recording.maxMinutes", String.valueOf(prefs.recording().maxMinutes()));
         p.setProperty("recording.noticeShown", String.valueOf(prefs.recordingNoticeShown()));
         p.setProperty("lcd.color", prefs.lcdColor());
+        ProxySettings proxy = prefs.proxy();
+        p.setProperty("proxy.mode", proxy.mode().name().toLowerCase(Locale.ROOT));
+        p.setProperty("proxy.host", proxy.host());
+        p.setProperty("proxy.port", String.valueOf(proxy.port()));
+        p.setProperty("proxy.user", proxy.user());
+        p.setProperty("proxy.noProxy", proxy.noProxy());
         if (prefs.lastFolder() != null) p.setProperty("player.lastFolder", prefs.lastFolder().toString());
         try {
             PropertiesFile.store(file, p, "amade-audio settings");
         } catch (RuntimeException e) {
             LOG.warn("Cannot save settings: {}", e.toString());
         }
+    }
+
+    private static ProxySettings proxy(Properties p) {
+        ProxySettings d = ProxySettings.DEFAULT;
+        ProxySettings.Mode mode;
+        try {
+            mode = ProxySettings.Mode.valueOf(p.getProperty("proxy.mode", d.mode().name()).strip().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            mode = d.mode();
+        }
+        return new ProxySettings(mode, p.getProperty("proxy.host", d.host()), (int) number(p, "proxy.port", d.port()),
+                p.getProperty("proxy.user", d.user()), p.getProperty("proxy.noProxy", d.noProxy()));
     }
 
     private static String key(SourceId id) {
