@@ -5,6 +5,7 @@ import org.datazuul.amadeos.audio.ui.widget.LcdPalette;
 import org.datazuul.amadeos.audio.ui.widget.LcdPanel;
 import org.datazuul.amadeos.audio.ui.widget.Led;
 import org.datazuul.amadeos.audio.ui.widget.LevelMeter;
+import org.datazuul.amadeos.audio.ui.widget.DeviceLabel;
 import org.datazuul.amadeos.audio.ui.widget.RackPanel;
 import org.datazuul.amadeos.audio.ui.widget.Widget;
 import org.datazuul.amadeos.audio.ui.widget.TransportIcon;
@@ -32,6 +33,7 @@ public final class WebRadioRack extends RackPanel {
 
     WebRadioRack(WebRadioPresenter p) {
         super(new BorderLayout(16, 0));
+        setDeviceLabel("RADIO", DeviceLabel.Symbol.RADIO);
         power.setSelected(true);
         power.addActionListener(e -> p.power(power.isSelected()));
         stations.addActionListener(e -> p.showStations());

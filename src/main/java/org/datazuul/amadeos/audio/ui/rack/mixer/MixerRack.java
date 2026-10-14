@@ -3,6 +3,7 @@ package org.datazuul.amadeos.audio.ui.rack.mixer;
 import org.datazuul.amadeos.audio.domain.SourceId;
 import org.datazuul.amadeos.audio.ui.widget.Fader;
 import org.datazuul.amadeos.audio.ui.widget.Led;
+import org.datazuul.amadeos.audio.ui.widget.DeviceLabel;
 import org.datazuul.amadeos.audio.ui.widget.RackPanel;
 
 import javax.swing.*;
@@ -28,6 +29,7 @@ public final class MixerRack extends RackPanel {
 
     MixerRack() {
         super(new BorderLayout(18, 0));
+        setDeviceLabel("MIXER", DeviceLabel.Symbol.MIXER);
         for (SourceId id : SourceId.values()) faders.put(id, new Fader(id.label() + " volume", FADER_HEIGHT, false, false));
 
         JPanel channels = new JPanel(new FlowLayout(FlowLayout.LEFT, 18, 0));

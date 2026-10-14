@@ -3,6 +3,7 @@ package org.datazuul.amadeos.audio.ui.rack.cd;
 import org.datazuul.amadeos.audio.ui.widget.CoverView;
 import org.datazuul.amadeos.audio.ui.widget.LcdPanel;
 import org.datazuul.amadeos.audio.ui.widget.Led;
+import org.datazuul.amadeos.audio.ui.widget.DeviceLabel;
 import org.datazuul.amadeos.audio.ui.widget.RackPanel;
 import org.datazuul.amadeos.audio.ui.widget.SevenSegmentDisplay;
 import org.datazuul.amadeos.audio.ui.widget.TransportIcon;
@@ -31,6 +32,7 @@ public final class CdRack extends RackPanel {
 
     CdRack(CdPresenter p) {
         super(new BorderLayout(16, 0));
+        setDeviceLabel("CD", DeviceLabel.Symbol.DISC);
         power.setSelected(true);
         power.addActionListener(e -> p.power(power.isSelected()));
         eject.addActionListener(e -> p.eject());

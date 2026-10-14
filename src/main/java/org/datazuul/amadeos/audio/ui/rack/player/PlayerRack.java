@@ -2,6 +2,7 @@ package org.datazuul.amadeos.audio.ui.rack.player;
 
 import org.datazuul.amadeos.audio.ui.widget.LcdPanel;
 import org.datazuul.amadeos.audio.ui.widget.Led;
+import org.datazuul.amadeos.audio.ui.widget.DeviceLabel;
 import org.datazuul.amadeos.audio.ui.widget.RackPanel;
 import org.datazuul.amadeos.audio.ui.widget.SeekBar;
 import org.datazuul.amadeos.audio.ui.widget.SevenSegmentDisplay;
@@ -37,6 +38,7 @@ public final class PlayerRack extends RackPanel {
 
     PlayerRack(PlayerPresenter p) {
         super(new BorderLayout(16, 0));
+        setDeviceLabel("PLAYER", DeviceLabel.Symbol.FILES);
         power.setSelected(true);
         power.addActionListener(e -> p.power(power.isSelected()));
         open.addActionListener(e -> p.openFiles());

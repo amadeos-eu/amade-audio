@@ -7,6 +7,8 @@ import java.awt.*;
 
 /** The front plate of a rack: theme colour with a raised bevel. */
 public class RackPanel extends JPanel {
+    private static final Insets PADDING = new Insets(10, 14, 10, 14);
+    private DeviceLabel label;
     public RackPanel(LayoutManager layout) {
         super(layout);
         setOpaque(true);
@@ -24,10 +26,24 @@ public class RackPanel extends JPanel {
         return new Dimension(Short.MAX_VALUE, getPreferredSize().height);
     }
 
+    /** Engraves the device's name into the rack front. */
+    public void setDeviceLabel(String name, DeviceLabel.Symbol symbol) {
+        label = new DeviceLabel(name, symbol);
+        Insets extra = label.space();
+        setBorder(BorderFactory.createCompoundBorder(AmadeUI.raised(), BorderFactory.createEmptyBorder(
+                PADDING.top + extra.top, PADDING.left + extra.left, PADDING.bottom, PADDING.right)));
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         g.setColor(AmadeUI.theme().base());
         g.fillRect(0, 0, getWidth(), getHeight());
+        if (label != null) {
+            Insets in = getInsets();
+            Graphics2D g2 = (Graphics2D) g.create();
+            label.paint(g2, new Rectangle(in.left, in.top, getWidth() - in.left - in.right, getHeight() - in.top - in.bottom));
+            g2.dispose();
+        }
     }
 
     /** A vertical column of side buttons (Power, Eject, ...), all the same width. */
