@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 
 /**
  * The output path of one device: plays a {@link PcmSource} on its own virtual thread and applies the
@@ -37,16 +38,18 @@ public final class AudioChannel {
     private final PcmOutput.Factory outputs;
     private final ToneControl tone;
     private final BooleanSupplier muted;
+    private final DoubleSupplier master;
     private final List<Listener> listeners = new CopyOnWriteArrayList<>();
     private volatile float volume = 0.8f;
     private Playback current;
     private volatile TransportState state = TransportState.STOPPED;
 
-    AudioChannel(SourceId id, PcmOutput.Factory outputs, ToneControl tone, BooleanSupplier muted) {
+    AudioChannel(SourceId id, PcmOutput.Factory outputs, ToneControl tone, BooleanSupplier muted, DoubleSupplier master) {
         this.id = id;
         this.outputs = outputs;
         this.tone = tone;
         this.muted = muted;
+        this.master = master;
     }
 
     public SourceId id() {
@@ -277,7 +280,7 @@ public final class AudioChannel {
                         length = downmixToStereo(buffer, n, channels, stereo);
                         data = stereo;
                     }
-                    applyGain(data, 0, length, muted.getAsBoolean() ? 0f : amplitude(volume));
+                    applyGain(data, 0, length, muted.getAsBoolean() ? 0f : amplitude(volume) * amplitude((float) master.getAsDouble()));
                     tone.process(data, 0, length, format.getSampleRate(), format.getChannels());
                     var levels = analyzer.process(data, 0, length, format);
                     if (levels != null) fireLevels(this, levels);

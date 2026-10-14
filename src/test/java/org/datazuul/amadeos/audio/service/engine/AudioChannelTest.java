@@ -67,10 +67,17 @@ class AudioChannelTest {
         FakeOutput.await(() -> finished.get() == 1);
         assertEquals(16384 / 4, maxSample(outputs.created.get(0).written.toByteArray()), 2);
 
-        engine.setMuted(true);
+        engine.setMasterVolume(0.5f);
+        channel.setVolume(1f);
         channel.play(new SineSource(1000, 0.1), 0);
         FakeOutput.await(() -> finished.get() == 2);
-        assertEquals(0, maxSample(outputs.created.get(1).written.toByteArray()));
+        assertEquals(16384 / 4, maxSample(outputs.created.get(1).written.toByteArray()), 2);
+
+        engine.setMasterVolume(1f);
+        engine.setMuted(true);
+        channel.play(new SineSource(1000, 0.1), 0);
+        FakeOutput.await(() -> finished.get() == 3);
+        assertEquals(0, maxSample(outputs.created.get(2).written.toByteArray()));
     }
 
     @Test

@@ -45,8 +45,9 @@ class SoundServerTest {
             commands.add(cmd);
             return "Volume: 0.25";
         });
-        server.setMasterVolume(0.5);
-        assertEquals(List.of("wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "0.500"), commands.get(0));
+        assertTrue(server.setMasterVolume(0.5));
+        assertEquals(SoundServer.Backend.WPCTL, server.backend());
+        assertEquals(List.of("wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "0.500"), commands.get(commands.size() - 1));
         assertEquals(0.25, server.masterVolume().getAsDouble(), 1e-9);
         server.setDefaultOutput(new OutputDevice("hdmi", "HDMI", false));
         assertEquals(List.of("pactl", "set-default-sink", "hdmi"), commands.get(commands.size() - 1));
@@ -56,6 +57,24 @@ class SoundServerTest {
         });
         assertTrue(missing.masterVolume().isEmpty());
         assertTrue(missing.outputs().isEmpty());
-        missing.setMicrophoneVolume(0.3); // no exception
+        assertFalse(missing.setMicrophoneVolume(0.3));
+        assertFalse(missing.hasMasterVolume());
+    }
+
+    @Test
+    void fallsBackToPactlWithoutWpctl() {
+        List<List<String>> commands = new ArrayList<>();
+        SoundServer server = new SoundServer(cmd -> {
+            commands.add(cmd);
+            if (cmd.get(0).equals("wpctl")) throw new IOException("wpctl: not found");
+            return "Volume: front-left: 26214 /  40% / -23.88 dB,   front-right: 26214 /  40% / -23.88 dB";
+        });
+        assertEquals(SoundServer.Backend.PACTL, server.backend());
+        assertEquals(0.4, server.masterVolume().getAsDouble(), 1e-9);
+        assertTrue(server.setMasterVolume(0.55));
+        assertEquals(List.of("pactl", "set-sink-volume", "@DEFAULT_SINK@", "55%"), commands.get(commands.size() - 1));
+        assertTrue(server.setMicrophoneVolume(0.2));
+        assertEquals(List.of("pactl", "set-source-volume", "@DEFAULT_SOURCE@", "20%"), commands.get(commands.size() - 1));
+        assertTrue(SoundServer.parsePactlVolume("garbage").isEmpty());
     }
 }

@@ -44,6 +44,7 @@ public final class Fader extends JComponent {
 
             @Override
             public void mousePressed(MouseEvent e) {
+                if (!isEnabled()) return;
                 requestFocusInWindow();
                 adjusting = true;
                 int knobY = knobY();
@@ -53,11 +54,13 @@ public final class Fader extends JComponent {
 
             @Override
             public void mouseDragged(MouseEvent e) {
+                if (!adjusting) return;
                 drag(e.getY());
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
+                if (!adjusting) return;
                 adjusting = false;
                 fire();
             }
@@ -69,7 +72,7 @@ public final class Fader extends JComponent {
 
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
-                setValue(value - (float) e.getPreciseWheelRotation() * 0.03f);
+                if (isEnabled()) setValue(value - (float) e.getPreciseWheelRotation() * 0.03f);
             }
         };
         addMouseListener(mouse);
@@ -78,6 +81,7 @@ public final class Fader extends JComponent {
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
+                if (!isEnabled()) return;
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_UP, KeyEvent.VK_RIGHT -> setValue(value + 0.02f);
                     case KeyEvent.VK_DOWN, KeyEvent.VK_LEFT -> setValue(value - 0.02f);
@@ -160,6 +164,11 @@ public final class Fader extends JComponent {
         if (centred) {
             g.setColor(t.darkShadow());
             g.drawLine(cx - slotW / 2, getHeight() / 2, cx + slotW / 2 - 1, getHeight() / 2);
+        }
+        if (!isEnabled()) {
+            g.setColor(t.shadow());
+            g.drawLine(cx - 3, 6, cx - 3, getHeight() - 7);
+            return; // no knob: nothing to control
         }
         // Knob.
         int y = knobY();

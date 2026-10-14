@@ -13,6 +13,7 @@ public final class AudioEngine {
     private final Map<SourceId, AudioChannel> channels = new EnumMap<>(SourceId.class);
     private final ToneControl tone = new ToneControl();
     private volatile boolean muted;
+    private volatile float master = 1f;
 
     @Inject
     public AudioEngine() {
@@ -21,7 +22,7 @@ public final class AudioEngine {
 
     public AudioEngine(PcmOutput.Factory outputs) {
         for (SourceId id : SourceId.values()) {
-            channels.put(id, new AudioChannel(id, outputs, tone, () -> muted));
+            channels.put(id, new AudioChannel(id, outputs, tone, () -> muted, () -> master));
         }
     }
 
@@ -39,6 +40,18 @@ public final class AudioEngine {
 
     public boolean isMuted() {
         return muted;
+    }
+
+    /**
+     * Master fader of the application (0..1), used when the sound server's master volume cannot be
+     * controlled; 1 otherwise.
+     */
+    public void setMasterVolume(float value) {
+        master = Math.max(0f, Math.min(1f, value));
+    }
+
+    public float masterVolume() {
+        return master;
     }
 
     /** Stops every device, e.g. on exit. */

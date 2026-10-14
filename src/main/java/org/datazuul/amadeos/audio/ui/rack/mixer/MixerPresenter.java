@@ -34,6 +34,8 @@ public final class MixerPresenter {
     private List<OutputDevice> outputs = List.of();
     private volatile double pendingMaster = -1;
     private volatile double pendingMic = -1;
+    /** Null until known: does the master fader control the sound server or only this application? */
+    private volatile Boolean systemMaster;
 
     @Inject
     public MixerPresenter(AudioEngine engine, SoundServer server, PreferencesStore preferences, ExecutorService executor,
@@ -67,6 +69,10 @@ public final class MixerPresenter {
         rack.treble.addChangeListener(e -> toneChanged());
         rack.mute.addActionListener(e -> engine.setMuted(rack.mute.isSelected()));
         rack.master.addChangeListener(e -> {
+            if (Boolean.FALSE.equals(systemMaster)) {
+                engine.setMasterVolume(rack.master.value());
+                return;
+            }
             pendingMaster = rack.master.value();
             executor.execute(this::pushVolumes);
         });
@@ -76,6 +82,16 @@ public final class MixerPresenter {
         });
         poll();
         Ticker.every(3000, this::poll);
+    }
+
+    /** Master as a gain in the audio engine, for systems without wpctl/pactl. */
+    private void useOwnMaster(float value) {
+        systemMaster = false;
+        edt.execute(() -> {
+            rack.master.setToolTipText("Master volume of Audio Station (no wpctl or pactl found)");
+            float v = value >= 0 ? value : rack.master.value();
+            engine.setMasterVolume(v);
+        });
     }
 
     private void toneChanged() {
@@ -89,7 +105,10 @@ public final class MixerPresenter {
     private synchronized void pushVolumes() {
         double m = pendingMaster;
         pendingMaster = -1;
-        if (m >= 0) server.setMasterVolume(m);
+        if (m >= 0 && !server.setMasterVolume(m)) {
+            // The sound server cannot be controlled: the fader becomes this application's master.
+            useOwnMaster((float) m);
+        }
         double mic = pendingMic;
         pendingMic = -1;
         if (mic >= 0) server.setMicrophoneVolume(mic);
@@ -102,11 +121,20 @@ public final class MixerPresenter {
                 OptionalDouble master = server.masterVolume();
                 OptionalDouble mic = server.microphoneVolume();
                 List<OutputDevice> devices = server.outputs();
+                if (master.isEmpty() && !Boolean.FALSE.equals(systemMaster)) {
+                    useOwnMaster(-1);
+                }
                 edt.execute(() -> {
-                    if (master.isPresent() && !rack.master.isAdjusting() && pendingMaster < 0) {
-                        rack.master.setValueQuietly((float) master.getAsDouble());
+                    if (master.isPresent()) {
+                        if (!Boolean.TRUE.equals(systemMaster)) {
+                            systemMaster = true;
+                            engine.setMasterVolume(1f);
+                            rack.master.setToolTipText("Master volume of the system (" + server.backend().name().toLowerCase() + ")");
+                        }
+                        if (!rack.master.isAdjusting() && pendingMaster < 0) {
+                            rack.master.setValueQuietly((float) master.getAsDouble());
+                        }
                     }
-                    rack.master.setEnabled(master.isPresent());
                     if (mic.isPresent() && !rack.microphone.isAdjusting() && pendingMic < 0) {
                         rack.microphone.setValueQuietly((float) mic.getAsDouble());
                     }

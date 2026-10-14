@@ -9,18 +9,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.OptionalDouble;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Master volume, microphone level and output device of PipeWire (or PulseAudio), through {@code wpctl}
- * and {@code pactl}. Every method blocks for a few milliseconds; call from a background thread.
- * Missing tools make the methods report nothing instead of failing.
+ * Master volume, microphone level and output device of the sound server. Uses {@code wpctl} (PipeWire /
+ * WirePlumber) and falls back to {@code pactl} (PulseAudio, or PipeWire with pipewire-pulse) when
+ * {@code wpctl} is missing or fails. Every method blocks for a few milliseconds; call from a background
+ * thread. Without either tool the methods report nothing, and the mixer uses its own master gain.
  */
 public final class SoundServer {
     private static final Logger LOG = LoggerFactory.getLogger(SoundServer.class);
     static final String SINK = "@DEFAULT_AUDIO_SINK@";
     static final String SOURCE = "@DEFAULT_AUDIO_SOURCE@";
+    private static final Pattern PERCENT = Pattern.compile("(\\d+)%");
+
+    /** Which tool controls the volume. */
+    public enum Backend {
+        WPCTL, PACTL, NONE
+    }
 
     private final CommandRunner runner;
+    private volatile Backend backend;
+    private volatile boolean warned;
 
     public SoundServer() {
         this(CommandRunner.system());
@@ -30,22 +41,55 @@ public final class SoundServer {
         this.runner = runner;
     }
 
-    /** Master volume 0..1 (PipeWire allows more than 1; shown as 1). */
-    public OptionalDouble masterVolume() {
-        return volume(SINK);
+    /** The tool in use, found on first use. */
+    public Backend backend() {
+        Backend b = backend;
+        if (b == null) {
+            b = detect();
+            backend = b;
+            LOG.info("Sound server volume control: {}", b);
+        }
+        return b;
     }
 
-    public void setMasterVolume(double value) {
-        setVolume(SINK, value);
+    private Backend detect() {
+        try {
+            if (parseVolume(runner.run(List.of("wpctl", "get-volume", SINK))).isPresent()) return Backend.WPCTL;
+        } catch (IOException e) {
+            LOG.debug("wpctl not usable: {}", e.toString());
+        }
+        try {
+            if (parsePactlVolume(runner.run(List.of("pactl", "get-sink-volume", "@DEFAULT_SINK@"))).isPresent()) {
+                return Backend.PACTL;
+            }
+        } catch (IOException e) {
+            LOG.debug("pactl not usable: {}", e.toString());
+        }
+        return Backend.NONE;
+    }
+
+    /** True if the master volume of the system can be read and set. */
+    public boolean hasMasterVolume() {
+        return backend() != Backend.NONE;
+    }
+
+    /** Master volume 0..1 (more than 100 % is shown as 1). */
+    public OptionalDouble masterVolume() {
+        return volume(true);
+    }
+
+    /** Sets the master volume; false if it did not work. */
+    public boolean setMasterVolume(double value) {
+        return setVolume(true, value);
     }
 
     /** Capture level of the default microphone, 0..1. */
     public OptionalDouble microphoneVolume() {
-        return volume(SOURCE);
+        return volume(false);
     }
 
-    public void setMicrophoneVolume(double value) {
-        setVolume(SOURCE, value);
+    public boolean setMicrophoneVolume(double value) {
+        return setVolume(false, value);
     }
 
     /** The outputs of the sound server; the default one marked. Empty without {@code pactl}. */
@@ -59,7 +103,7 @@ public final class SoundServer {
         }
     }
 
-    /** Makes the output the default; PipeWire moves running streams there. */
+    /** Makes the output the default; the sound server moves running streams there. */
     public void setDefaultOutput(OutputDevice device) {
         try {
             runner.run(List.of("pactl", "set-default-sink", device.name()));
@@ -68,25 +112,46 @@ public final class SoundServer {
         }
     }
 
-    private OptionalDouble volume(String target) {
+    private OptionalDouble volume(boolean sink) {
         try {
-            return parseVolume(runner.run(List.of("wpctl", "get-volume", target)));
+            return switch (backend()) {
+                case WPCTL -> parseVolume(runner.run(List.of("wpctl", "get-volume", sink ? SINK : SOURCE)));
+                case PACTL -> parsePactlVolume(runner.run(sink
+                        ? List.of("pactl", "get-sink-volume", "@DEFAULT_SINK@")
+                        : List.of("pactl", "get-source-volume", "@DEFAULT_SOURCE@")));
+                case NONE -> OptionalDouble.empty();
+            };
         } catch (IOException e) {
-            LOG.debug("Cannot read volume of {}: {}", target, e.toString());
+            LOG.debug("Cannot read the {} volume: {}", sink ? "master" : "microphone", e.toString());
             return OptionalDouble.empty();
         }
     }
 
-    private void setVolume(String target, double value) {
+    private boolean setVolume(boolean sink, double value) {
         double v = Math.max(0, Math.min(1, value));
+        Backend b = backend();
         try {
-            runner.run(List.of("wpctl", "set-volume", target, String.format(Locale.ROOT, "%.3f", v)));
+            switch (b) {
+                case WPCTL -> runner.run(List.of("wpctl", "set-volume", sink ? SINK : SOURCE,
+                        String.format(Locale.ROOT, "%.3f", v)));
+                case PACTL -> runner.run(List.of("pactl", sink ? "set-sink-volume" : "set-source-volume",
+                        sink ? "@DEFAULT_SINK@" : "@DEFAULT_SOURCE@", Math.round(v * 100) + "%"));
+                case NONE -> {
+                    return false;
+                }
+            }
+            return true;
         } catch (IOException e) {
-            LOG.debug("Cannot set volume of {}: {}", target, e.toString());
+            if (!warned) {
+                warned = true;
+                LOG.warn("Cannot set the {} volume with {}: {}", sink ? "master" : "microphone", b, e.toString());
+            }
+            if (b == Backend.WPCTL) backend = null; // try again, maybe pactl works
+            return false;
         }
     }
 
-    /** {@code Volume: 0.40} or {@code Volume: 0.40 [MUTED]}. */
+    /** {@code Volume: 0.40} or {@code Volume: 0.40 [MUTED]} (wpctl). */
     static OptionalDouble parseVolume(String output) {
         String s = output.strip();
         int colon = s.indexOf(':');
@@ -97,6 +162,13 @@ public final class SoundServer {
         } catch (NumberFormatException e) {
             return OptionalDouble.empty();
         }
+    }
+
+    /** {@code Volume: front-left: 26214 /  40% / -23.88 dB,   front-right: ...} (pactl): the first percentage. */
+    static OptionalDouble parsePactlVolume(String output) {
+        Matcher m = PERCENT.matcher(output);
+        if (!output.contains("Volume") || !m.find()) return OptionalDouble.empty();
+        return OptionalDouble.of(Math.min(1.0, Integer.parseInt(m.group(1)) / 100.0));
     }
 
     /** Parses {@code pactl list sinks}: blocks starting with {@code Sink #n} with Name and Description lines. */

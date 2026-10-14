@@ -15,11 +15,26 @@ public final class JavaSoundOutput implements PcmOutput {
     @Override
     public void open(AudioFormat format) throws IOException {
         try {
-            line = AudioSystem.getSourceDataLine(format);
+            line = defaultDeviceLine(format);
             line.open(format, Math.max(BUFFER_BYTES, format.getFrameSize() * 4096));
         } catch (LineUnavailableException | IllegalArgumentException e) {
             throw new IOException("No audio output for " + format + ": " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * The line of ALSA's {@code default} device, which leads to PipeWire or PulseAudio, so the system's
+     * master volume and output selection apply; Java Sound's own default if there is none.
+     */
+    private static SourceDataLine defaultDeviceLine(AudioFormat format) throws LineUnavailableException {
+        javax.sound.sampled.DataLine.Info info = new javax.sound.sampled.DataLine.Info(SourceDataLine.class, format);
+        for (javax.sound.sampled.Mixer.Info mixerInfo : AudioSystem.getMixerInfo()) {
+            String name = mixerInfo.getName().toLowerCase(java.util.Locale.ROOT);
+            if (!name.startsWith("default") && !name.contains("pipewire") && !name.contains("pulse")) continue;
+            javax.sound.sampled.Mixer mixer = AudioSystem.getMixer(mixerInfo);
+            if (mixer.isLineSupported(info)) return (SourceDataLine) mixer.getLine(info);
+        }
+        return AudioSystem.getSourceDataLine(format);
     }
 
     @Override
