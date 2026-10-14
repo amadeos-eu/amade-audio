@@ -94,6 +94,10 @@ public final class MainPresenter {
             window.setRackVisible(hidden, false);
         }
         coordinator.addListener(id -> edt.execute(() -> activeChanged(id)));
+        coordinator.addListRequestListener(id -> edt.execute(() -> {
+            playlist.show(id);
+            window.setPlaylistVisible(true);
+        }));
         activeChanged(null);
 
         mixer.start();

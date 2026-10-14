@@ -16,7 +16,7 @@ import java.awt.*;
 /** The web radio rack: dot-matrix station display with title, meters and buffer, transport with Record. */
 public final class WebRadioRack extends RackPanel {
     final JToggleButton power = Led.toggle("Power", Led.GREEN);
-    final JButton search = new JButton("Search...");
+    final JButton stations = new JButton("Stations...");
     final DotMatrixDisplay station = new DotMatrixDisplay(3, 64);
     final DotMatrixDisplay title = new DotMatrixDisplay(2, 110);
     final JLabel streamInfo = LcdPanel.caption(" ");
@@ -34,7 +34,8 @@ public final class WebRadioRack extends RackPanel {
         super(new BorderLayout(16, 0));
         power.setSelected(true);
         power.addActionListener(e -> p.power(power.isSelected()));
-        search.addActionListener(e -> p.showSearch());
+        stations.addActionListener(e -> p.showStations());
+        stations.setToolTipText("Show the stations: favorites, search, genres, countries");
         previous = TransportIcon.button(Kind.PREVIOUS, p::previous);
         stop = TransportIcon.button(Kind.STOP, p::stop);
         play = TransportIcon.button(Kind.PLAY, p::play);
@@ -75,7 +76,7 @@ public final class WebRadioRack extends RackPanel {
         transportWrap.setOpaque(false);
         transportWrap.add(TransportIcon.bar(previous, stop, play, record, next));
 
-        add(RackPanel.sideButtons(power, search), BorderLayout.WEST);
+        add(RackPanel.sideButtons(power, stations), BorderLayout.WEST);
         add(lcd, BorderLayout.CENTER);
         add(transportWrap, BorderLayout.EAST);
     }
@@ -85,7 +86,7 @@ public final class WebRadioRack extends RackPanel {
     }
 
     void setControlsEnabled(boolean enabled) {
-        for (AbstractButton b : new AbstractButton[]{search, previous, stop, play, record, next}) b.setEnabled(enabled);
+        for (AbstractButton b : new AbstractButton[]{stations, previous, stop, play, record, next}) b.setEnabled(enabled);
     }
 
     /** Fill level of the network buffer. */

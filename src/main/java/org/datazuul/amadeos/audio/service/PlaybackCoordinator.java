@@ -15,6 +15,7 @@ import java.util.function.Consumer;
 public final class PlaybackCoordinator {
     private final AudioEngine engine;
     private final List<Consumer<SourceId>> listeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<SourceId>> listRequests = new CopyOnWriteArrayList<>();
     private volatile SourceId active;
 
     @Inject
@@ -49,6 +50,20 @@ public final class PlaybackCoordinator {
             active = id;
             listeners.forEach(l -> l.accept(id));
         }
+    }
+
+    /** Called when a device asks to show its list without becoming active. */
+    public void addListRequestListener(Consumer<SourceId> listener) {
+        listRequests.add(listener);
+    }
+
+    /**
+     * Shows the device's list in the playlist panel. If nothing plays, the device also becomes active;
+     * otherwise the playing device stays active and keeps playing.
+     */
+    public void showList(SourceId id) {
+        if (active == null || !engine.channel(active).state().isActive()) select(id);
+        listRequests.forEach(l -> l.accept(id));
     }
 
     /** The device was switched off: if it was active, nothing is. */

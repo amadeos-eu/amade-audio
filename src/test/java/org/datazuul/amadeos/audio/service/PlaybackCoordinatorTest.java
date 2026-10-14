@@ -45,4 +45,23 @@ class PlaybackCoordinatorTest {
         assertNull(coordinator.active());
         engine.stopAll();
     }
+
+    @Test
+    void showListKeepsThePlayingDeviceActive() throws Exception {
+        AudioEngine engine = new AudioEngine(new FakeOutput.Factory(true));
+        PlaybackCoordinator coordinator = new PlaybackCoordinator(engine);
+        List<SourceId> requests = new ArrayList<>();
+        coordinator.addListRequestListener(requests::add);
+        coordinator.showList(SourceId.WEBRADIO);
+        assertEquals(SourceId.WEBRADIO, coordinator.active(), "nothing plays: the device becomes active");
+
+        coordinator.activate(SourceId.PLAYER);
+        engine.channel(SourceId.PLAYER).play(new SineSource(440, 60), 0);
+        FakeOutput.await(() -> engine.channel(SourceId.PLAYER).state() == TransportState.PLAYING);
+        coordinator.showList(SourceId.WEBRADIO);
+        assertEquals(SourceId.PLAYER, coordinator.active());
+        assertEquals(TransportState.PLAYING, engine.channel(SourceId.PLAYER).state());
+        assertEquals(List.of(SourceId.WEBRADIO, SourceId.WEBRADIO), requests);
+        engine.stopAll();
+    }
 }

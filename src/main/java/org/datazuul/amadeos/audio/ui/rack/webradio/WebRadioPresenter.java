@@ -146,8 +146,16 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
         updateInfo();
     }
 
-    void showSearch() {
-        coordinator.select(SourceId.WEBRADIO);
+    /** The Stations button: shows the station list with the favorites, even while another device plays. */
+    void showStations() {
+        coordinator.showList(SourceId.WEBRADIO);
+        showTab(StationBrowserView.Tab.FAVORITES);
+        view.table.requestFocusInWindow();
+    }
+
+    /** No favorites yet: open the search. */
+    private void showSearch() {
+        coordinator.showList(SourceId.WEBRADIO);
         showTab(StationBrowserView.Tab.SEARCH);
     }
 
