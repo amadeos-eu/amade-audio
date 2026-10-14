@@ -26,6 +26,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * so changes made elsewhere show up.
  */
 public final class MixerPresenter {
+    /** Master fader position until the sound server reports its volume (or for good, without one). */
+    static final float DEFAULT_MASTER = 0.4f;
+
     private final AudioEngine engine;
     private final SoundServer server;
     private final PreferencesStore preferences;
@@ -70,6 +73,7 @@ public final class MixerPresenter {
         rack.bass.addChangeListener(e -> toneChanged());
         rack.treble.addChangeListener(e -> toneChanged());
         rack.mute.addActionListener(e -> engine.setMuted(rack.mute.isSelected()));
+        rack.master.setValueQuietly(DEFAULT_MASTER);
         rack.master.addChangeListener(e -> {
             if (Boolean.FALSE.equals(systemMaster)) {
                 engine.setMasterVolume(rack.master.value());
