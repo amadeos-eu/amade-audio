@@ -62,20 +62,25 @@ public final class CdRack extends RackPanel {
         mode.setPreferredSize(new Dimension(64, 10));
         timeLcd.add(mode, BorderLayout.EAST);
 
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        right.setOpaque(false);
-        right.add(trackLcd);
-        right.add(timeLcd);
-        JPanel transport = TransportIcon.bar(previous, stop, play, pause, next);
+        // Same structure as the other racks: [side buttons | info + LCDs | transport], so the LCDs
+        // and the transport bar line up with the player and web radio racks.
+        JPanel lcdRow = new JPanel(new BorderLayout(8, 0));
+        lcdRow.setOpaque(false);
+        lcdRow.add(trackLcd, BorderLayout.WEST);
+        lcdRow.add(timeLcd, BorderLayout.CENTER);
+
+        JPanel center = new JPanel(new BorderLayout(14, 0));
+        center.setOpaque(false);
+        center.add(info, BorderLayout.CENTER);
+        center.add(lcdRow, BorderLayout.EAST);
+
         JPanel transportWrap = new JPanel(new GridBagLayout());
         transportWrap.setOpaque(false);
-        transportWrap.add(transport);
-        right.add(Box.createHorizontalStrut(8));
-        right.add(transportWrap);
+        transportWrap.add(TransportIcon.bar(previous, stop, play, pause, next));
 
         add(RackPanel.sideButtons(power, eject), BorderLayout.WEST);
-        add(info, BorderLayout.CENTER);
-        add(right, BorderLayout.EAST);
+        add(center, BorderLayout.CENTER);
+        add(transportWrap, BorderLayout.EAST);
     }
 
     void setDimmed(boolean dimmed) {
