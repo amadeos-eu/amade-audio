@@ -152,6 +152,23 @@ The Debian package recommends:
 The package installs `amade-audio.desktop` (`Categories=AudioVideo;Audio;Player;`), so the amadeOS
 front panel lists it with the multimedia applications.
 
+### Windows
+
+`./gradlew windowsInstaller` builds an installer with jpackage that includes a Java runtime, so Windows
+users need no Java. It runs only on Windows; MSI and EXE also need
+[WiX Toolset 3](https://github.com/wixtoolset/wix3/releases) on the `PATH` (JDK 21 does not support WiX 4/5).
+
+```bat
+gradlew windowsInstaller                            :: build\windows\msi\amade-audio-0.1.0.msi
+gradlew windowsInstaller -PinstallerType=exe        :: setup .exe
+gradlew windowsInstaller -PinstallerType=app-image  :: folder with amade-audio.exe, no WiX needed
+```
+
+The `windows` job in CI builds the MSI and a portable ZIP of the app image on every push; both are
+in the `amade-audio-windows` artifact of the workflow run. The installer is not code-signed, so
+SmartScreen warns on first start. On Windows the CD rack reads audio CDs through the system's
+CD-ROM driver; master volume is the application's own fader, and the output list stays empty.
+
 ## Roadmap
 
 - [x] Racks: mixer, CD, file player, web radio; playlist panel following the active device
