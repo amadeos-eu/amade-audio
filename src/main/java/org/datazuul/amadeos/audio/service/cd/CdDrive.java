@@ -8,7 +8,7 @@ import java.util.Optional;
 
 /** A CD drive. Methods block on the drive; call them from a background thread. */
 public interface CdDrive {
-    /** Device path, e.g. {@code /dev/sr0}. */
+    /** Device path, e.g. {@code /dev/sr0}, or drive letter on Windows, e.g. {@code D:}. */
     String device();
 
     /** True if the drive can be used at all (library present, device exists). */

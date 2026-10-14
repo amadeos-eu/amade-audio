@@ -9,6 +9,7 @@ import org.datazuul.amadeos.audio.repository.PreferencesStore;
 import org.datazuul.amadeos.audio.service.PlaybackCoordinator;
 import org.datazuul.amadeos.audio.service.cd.CdDrive;
 import org.datazuul.amadeos.audio.service.cd.LibCdioDrive;
+import org.datazuul.amadeos.audio.service.cd.WindowsCdDrive;
 import org.datazuul.amadeos.audio.service.decode.DecoderFactory;
 import org.datazuul.amadeos.audio.service.engine.AudioEngine;
 import org.datazuul.amadeos.audio.service.metadata.ArtworkService;
@@ -40,7 +41,7 @@ public final class AudioModule extends AbstractModule {
         bind(PlaybackCoordinator.class).in(Scopes.SINGLETON);
         bind(DecoderFactory.class).in(Scopes.SINGLETON);
         bind(TagReader.class).in(Scopes.SINGLETON);
-        bind(CdDrive.class).to(LibCdioDrive.class).in(Scopes.SINGLETON);
+        bind(CdDrive.class).to(cdDrive()).in(Scopes.SINGLETON);
         bind(HttpFetcher.class).toInstance(HttpFetcher.system());
         bind(MusicBrainzClient.class).in(Scopes.SINGLETON);
         bind(CdMetadataService.class).in(Scopes.SINGLETON);
@@ -56,6 +57,11 @@ public final class AudioModule extends AbstractModule {
         bind(PlayerPresenter.class).in(Scopes.SINGLETON);
         bind(WebRadioPresenter.class).in(Scopes.SINGLETON);
         bind(MainPresenter.class).in(Scopes.SINGLETON);
+    }
+
+    /** Windows reads CDs through its own CD-ROM driver, everything else through libcdio. */
+    static Class<? extends CdDrive> cdDrive() {
+        return System.getProperty("os.name", "").startsWith("Windows") ? WindowsCdDrive.class : LibCdioDrive.class;
     }
 
     @Provides
