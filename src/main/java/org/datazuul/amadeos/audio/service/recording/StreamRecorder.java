@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.service.recording;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.audio.domain.RecordingSettings;
 import org.datazuul.amadeos.audio.service.decode.DecoderFactory.StreamCodec;
 import org.slf4j.Logger;
@@ -117,7 +119,7 @@ public final class StreamRecorder {
             Instant now = clock.instant();
             if (settings.maxMinutes() > 0 && Duration.between(started, now).toMinutes() >= settings.maxMinutes()) {
                 List<Path> files = stopInternal();
-                listener.stopped("Maximum recording time of " + settings.maxMinutes() + " minutes reached", files);
+                listener.stopped(tr("recording.max-time", settings.maxMinutes()), files);
                 return;
             }
             if (Duration.between(lastStatus, now).toMillis() >= 1000) {
@@ -127,7 +129,7 @@ public final class StreamRecorder {
         } catch (IOException e) {
             LOG.warn("Recording failed", e);
             List<Path> files = stopInternal();
-            listener.stopped("Recording failed: " + e.getMessage(), files);
+            listener.stopped(tr("recording.failed", e.getMessage()), files);
         }
     }
 

@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.domain;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +42,7 @@ public record AlbumInfo(String album, String artist, String year, String label, 
     /** Title of the track at the given index (0-based), or {@code Track nn}. */
     public String title(int index) {
         String t = index >= 0 && index < titles.size() ? titles.get(index) : "";
-        return t.isEmpty() ? String.format("Track %02d", index + 1) : t;
+        return t.isEmpty() ? tr("cd.track-title", index + 1) : t;
     }
 
     /** Artist of the track at the given index, or the album artist. */

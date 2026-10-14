@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.rack.cd;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.audio.domain.AlbumInfo;
 import org.datazuul.amadeos.audio.domain.CdTrack;
 import org.datazuul.amadeos.audio.ui.playlist.CoverColumn;
@@ -18,10 +20,10 @@ public final class CdTrackListView {
     final CoverColumn cover = new CoverColumn();
     final Model model = new Model();
     final JTable table = new JTable(model);
-    final JButton edit = new JButton("Edit Titles...");
-    final JButton lookUp = new JButton("Look up (MusicBrainz)");
-    final JToggleButton shuffle = Led.toggle("Shuffle", Led.GREEN);
-    final JToggleButton repeat = Led.toggle("Repeat", Led.GREEN);
+    final JButton edit = new JButton(tr("cd.edit-titles"));
+    final JButton lookUp = new JButton(tr("cd.look-up"));
+    final JToggleButton shuffle = Led.toggle(tr("list.shuffle"), Led.GREEN);
+    final JToggleButton repeat = Led.toggle(tr("list.repeat"), Led.GREEN);
     final JPanel component;
 
     CdTrackListView(CdPresenter p) {
@@ -52,7 +54,8 @@ public final class CdTrackListView {
 
     /** Tracks of the disc with titles. */
     static final class Model extends AbstractTableModel {
-        private static final String[] COLUMNS = {"Track", "Title", "Artist", "Length"};
+        private static final String[] COLUMNS = {tr("column.track"), tr("column.title"), tr("column.artist"),
+                tr("column.length")};
         private List<CdTrack> tracks = List.of();
         private AlbumInfo album = AlbumInfo.unknown(0);
         int playing = -1;

@@ -100,11 +100,64 @@ public final class DotMatrixDisplay extends Widget {
         }
     }
 
-    private static byte[] glyph(char c) {
+    static byte[] glyph(char c) {
+        byte[] g = known(c);
+        if (g == null) g = accented(c);
+        if (g == null) g = CHARS.get('?');
+        return g == null ? new byte[5] : g;
+    }
+
+    private static byte[] known(char c) {
         byte[] g = CHARS.get(c);
         if (g == null) g = CHARS.get(Character.toUpperCase(c));
         if (g == null) g = CHARS.get(Character.toString(c).toUpperCase(Locale.ROOT).charAt(0));
-        if (g == null) g = CHARS.get('?');
-        return g == null ? new byte[5] : g;
+        return g;
+    }
+
+    /**
+     * Letters of French, Spanish and Italian (é è ê à ç ñ í ó ú ...) from the base letter and the accent, so
+     * that translated texts show on the LCD: the accent takes the top row and the letter loses its second
+     * row (a cedilla takes the bottom row instead). ¿ and ¡ are ? and ! turned upside down.
+     */
+    private static byte[] accented(char c) {
+        if (c == '¿') return rotated(CHARS.get('?'));
+        if (c == '¡') return rotated(CHARS.get('!'));
+        String nfd = java.text.Normalizer.normalize(String.valueOf(c), java.text.Normalizer.Form.NFD);
+        if (nfd.length() != 2) return null;
+        byte[] base = known(nfd.charAt(0));
+        if (base == null) return null;
+        String mark = switch (nfd.charAt(1)) {
+            case '\u0301' -> "   X ";  // acute
+            case '\u0300' -> " X   ";  // grave
+            case '\u0302' -> " XXX ";  // circumflex
+            case '\u0308' -> " X X ";  // diaeresis
+            case '\u0303' -> "XX XX";  // tilde
+            case '\u030A' -> "  X  ";  // ring
+            case '\u0327' -> "  X  ";  // cedilla, below
+            default -> null;
+        };
+        if (mark == null) return null;
+        boolean below = nfd.charAt(1) == '\u0327';
+        byte[] g = new byte[5];
+        for (int col = 0; col < 5; col++) {
+            int bits = base[col] & 0x7F;
+            int dot = mark.charAt(col) == 'X' ? 1 : 0;
+            g[col] = (byte) (below
+                    ? (bits & 1) | ((bits & 0x7C) >> 1) | (dot << 6)
+                    : dot | ((bits & 1) << 1) | (bits & 0x7C));
+        }
+        return g;
+    }
+
+    private static byte[] rotated(byte[] glyph) {
+        if (glyph == null) return null;
+        byte[] g = new byte[5];
+        for (int col = 0; col < 5; col++) {
+            int bits = glyph[4 - col] & 0x7F;
+            int flipped = 0;
+            for (int row = 0; row < 7; row++) if ((bits & (1 << row)) != 0) flipped |= 1 << (6 - row);
+            g[col] = (byte) flipped;
+        }
+        return g;
     }
 }

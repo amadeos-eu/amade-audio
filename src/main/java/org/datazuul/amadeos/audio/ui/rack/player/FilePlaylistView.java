@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.rack.player;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.audio.domain.PlaylistEntry;
 import org.datazuul.amadeos.audio.ui.playlist.CoverColumn;
 import org.datazuul.amadeos.audio.ui.playlist.PlayingRenderer;
@@ -22,14 +24,14 @@ public final class FilePlaylistView {
     final CoverColumn cover = new CoverColumn();
     final Model model = new Model();
     final JTable table = new JTable(model);
-    final JButton addFiles = new JButton("Add Files...");
-    final JButton addFolder = new JButton("Add Folder...");
-    final JButton remove = new JButton("Remove");
-    final JButton clear = new JButton("Clear");
-    final JButton load = new JButton("Load M3U...");
-    final JButton save = new JButton("Save M3U...");
-    final JToggleButton shuffle = Led.toggle("Shuffle", Led.GREEN);
-    final JToggleButton repeat = Led.toggle("Repeat", Led.GREEN);
+    final JButton addFiles = new JButton(tr("player.add-files"));
+    final JButton addFolder = new JButton(tr("player.add-folder"));
+    final JButton remove = new JButton(tr("player.remove"));
+    final JButton clear = new JButton(tr("player.clear"));
+    final JButton load = new JButton(tr("player.load-m3u"));
+    final JButton save = new JButton(tr("player.save-m3u"));
+    final JToggleButton shuffle = Led.toggle(tr("list.shuffle"), Led.GREEN);
+    final JToggleButton repeat = Led.toggle(tr("list.repeat"), Led.GREEN);
     final JPanel component;
 
     FilePlaylistView(PlayerPresenter p) {
@@ -92,7 +94,8 @@ public final class FilePlaylistView {
 
     /** Table of the playlist entries. */
     static final class Model extends AbstractTableModel {
-        private static final String[] COLUMNS = {"#", "Title", "Artist", "Album", "Length", "Format"};
+        private static final String[] COLUMNS = {tr("column.number"), tr("column.title"), tr("column.artist"),
+                tr("column.album"), tr("column.length"), tr("column.format")};
         private List<PlaylistEntry> entries = List.of();
         int playing = -1;
 

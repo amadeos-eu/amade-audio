@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.widget;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Path2D;
@@ -7,17 +9,11 @@ import java.awt.geom.Path2D;
 /** Symbols of the transport buttons, drawn in the button's text colour (the record dot in red). */
 public final class TransportIcon implements Icon {
     public enum Kind {
-        PREVIOUS("Previous"), NEXT("Next"), REWIND("Rewind"), FORWARD("Fast forward"), STOP("Stop"),
-        PLAY("Play"), PAUSE("Pause"), RECORD("Record"), EJECT("Eject"), FAVORITE("Add to favourites");
+        PREVIOUS, NEXT, REWIND, FORWARD, STOP, PLAY, PAUSE, RECORD, EJECT, FAVORITE;
 
-        private final String label;
-
-        Kind(String label) {
-            this.label = label;
-        }
-
+        /** Tooltip and accessible name, from {@code transport.<kind>}. */
         public String label() {
-            return label;
+            return tr("transport." + name().toLowerCase(java.util.Locale.ROOT));
         }
     }
 

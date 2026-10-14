@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.widget;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.audio.domain.AudioLevels;
 
 import javax.swing.*;
@@ -13,7 +15,7 @@ public final class SpectrumMeter extends Widget {
     public SpectrumMeter() {
         setPreferredSize(new Dimension(280, 74));
         setOpaque(false);
-        getAccessibleContext().setAccessibleName("Spectrum");
+        getAccessibleContext().setAccessibleName(tr("widget.spectrum"));
     }
 
     public void setBands(float[] values) {

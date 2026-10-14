@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.rack.player;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import com.google.inject.Inject;
 import org.datazuul.amadeos.audio.domain.Artwork;
 import org.datazuul.amadeos.audio.domain.AudioLevels;
@@ -52,7 +54,7 @@ public final class PlayerPresenter implements AudioChannel.Listener {
     private final EdtExecutor edt;
     private final PlayerRack rack;
     private final FilePlaylistView list;
-    private final PlaylistPanel.Header header = new PlaylistPanel.Header("PLAYLIST", null);
+    private final PlaylistPanel.Header header = new PlaylistPanel.Header(tr("player.list.header"), null);
     private final Playlist playlist = new Playlist();
     private Component parent;
     private Consumer<String> info = s -> {
@@ -119,7 +121,7 @@ public final class PlayerPresenter implements AudioChannel.Listener {
             List<PlaylistEntry> entries = files.stream().map(PlaylistEntry::of).toList();
             edt.execute(() -> {
                 if (entries.isEmpty()) {
-                    error("No playable audio files found.");
+                    error(tr("player.nothing-playable"));
                     return;
                 }
                 int firstNew = playlist.size();
@@ -159,7 +161,7 @@ public final class PlayerPresenter implements AudioChannel.Listener {
 
     private void updateInfo() {
         int n = playlist.size();
-        info.accept("Player · " + n + (n == 1 ? " file" : " files")
+        info.accept(tr("source.player") + " · " + tr("player.files", n)
                 + (playlist.totalLength().isZero() ? "" : " · " + PlaylistPanel.time(playlist.totalLength().toSeconds())));
     }
 
@@ -169,7 +171,7 @@ public final class PlayerPresenter implements AudioChannel.Listener {
         List<String> extensions = new ArrayList<>(AudioFiles.EXTENSIONS.stream().sorted().toList());
         extensions.add("m3u");
         extensions.add("m3u8");
-        chooser.setFileFilter(new FileNameExtensionFilter("Audio files and playlists", extensions.toArray(new String[0])));
+        chooser.setFileFilter(new FileNameExtensionFilter(tr("player.filter.audio"), extensions.toArray(new String[0])));
         if (chooser.showOpenDialog(parent) != JFileChooser.APPROVE_OPTION) return;
         List<Path> paths = new ArrayList<>();
         for (File f : chooser.getSelectedFiles()) paths.add(f.toPath());
@@ -208,7 +210,7 @@ public final class PlayerPresenter implements AudioChannel.Listener {
 
     void loadPlaylist() {
         JFileChooser chooser = chooser();
-        chooser.setFileFilter(new FileNameExtensionFilter("M3U playlists", "m3u", "m3u8"));
+        chooser.setFileFilter(new FileNameExtensionFilter(tr("player.filter.m3u"), "m3u", "m3u8"));
         if (chooser.showOpenDialog(parent) != JFileChooser.APPROVE_OPTION) return;
         remember(chooser);
         add(List.of(chooser.getSelectedFile().toPath()), false);
@@ -217,17 +219,17 @@ public final class PlayerPresenter implements AudioChannel.Listener {
     void savePlaylist() {
         if (playlist.isEmpty()) return;
         JFileChooser chooser = chooser();
-        chooser.setFileFilter(new FileNameExtensionFilter("M3U playlists", "m3u", "m3u8"));
+        chooser.setFileFilter(new FileNameExtensionFilter(tr("player.filter.m3u"), "m3u", "m3u8"));
         chooser.setSelectedFile(new File(chooser.getCurrentDirectory(), "playlist.m3u"));
         if (chooser.showSaveDialog(parent) != JFileChooser.APPROVE_OPTION) return;
         Path file = chooser.getSelectedFile().toPath();
         if (!file.getFileName().toString().toLowerCase().matches(".*\\.m3u8?$")) file = file.resolveSibling(file.getFileName() + ".m3u");
-        if (Files.exists(file) && JOptionPane.showConfirmDialog(parent, file.getFileName() + " already exists. Replace it?",
-                "Save Playlist", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+        if (Files.exists(file) && JOptionPane.showConfirmDialog(parent, tr("player.replace", file.getFileName().toString()),
+                tr("player.save-playlist"), JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
         try {
             M3uPlaylist.write(file, playlist.entries());
         } catch (IOException e) {
-            error("Cannot save the playlist: " + e.getMessage());
+            error(tr("player.error.save", e.getMessage()));
         }
     }
 
@@ -302,7 +304,7 @@ public final class PlayerPresenter implements AudioChannel.Listener {
                 LOG.warn("Cannot play {}", entry.file(), e);
                 edt.execute(() -> {
                     if (req != request) return;
-                    error("Cannot play " + entry.file().getFileName() + ":\n" + e.getMessage());
+                    error(tr("player.error.play", entry.file().getFileName().toString(), e.getMessage()));
                 });
             }
         });
@@ -364,8 +366,8 @@ public final class PlayerPresenter implements AudioChannel.Listener {
 
     private void showEntry(PlaylistEntry entry) {
         if (entry == null) {
-            rack.folder.setText("LOCAL FILES");
-            rack.file.setText("No file");
+            rack.folder.setText(tr("player.local-files"));
+            rack.file.setText(tr("player.no-file"));
             rack.number.setText("  ");
             rack.time.setText("  :  ");
             rack.setFormat("");
@@ -374,7 +376,7 @@ public final class PlayerPresenter implements AudioChannel.Listener {
             return;
         }
         Path dir = entry.file().getParent();
-        rack.folder.setText("LOCAL FILES · " + (dir == null ? "" : abbreviate(dir)));
+        rack.folder.setText(tr("player.local-files") + " · " + (dir == null ? "" : abbreviate(dir)));
         rack.file.setText(entry.file().getFileName().toString());
         rack.number.setText(LcdText.number(playlist.currentIndex() + 1));
         rack.setFormat(entry.format());
@@ -421,7 +423,7 @@ public final class PlayerPresenter implements AudioChannel.Listener {
         edt.execute(() -> {
             if (state == TransportState.ERROR) {
                 list.model.setPlaying(-1);
-                error("Playback failed: " + message);
+                error(tr("player.error.playback", message));
             }
             if (state == TransportState.PLAYING) list.model.setPlaying(playlist.currentIndex());
             if (state == TransportState.STOPPED && !channel.state().isActive()) rack.spectrum.setBands(new float[16]);
@@ -443,7 +445,7 @@ public final class PlayerPresenter implements AudioChannel.Listener {
     }
 
     private void error(String text) {
-        JOptionPane.showMessageDialog(parent, text, "Audio Station", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(parent, text, tr("app.title"), JOptionPane.ERROR_MESSAGE);
     }
 
     private static void closeQuietly(PcmSource source) {

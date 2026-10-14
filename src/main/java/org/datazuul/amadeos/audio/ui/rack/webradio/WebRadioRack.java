@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.rack.webradio;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.audio.ui.widget.DotMatrixDisplay;
 import org.datazuul.amadeos.audio.ui.widget.LcdPalette;
 import org.datazuul.amadeos.audio.ui.widget.LcdPanel;
@@ -16,8 +18,8 @@ import java.awt.*;
 
 /** The web radio rack: dot-matrix station display with title, meters and buffer, transport with Record. */
 public final class WebRadioRack extends RackPanel {
-    final JToggleButton power = Led.toggle("Power", Led.GREEN);
-    final JButton stations = new JButton("Stations...");
+    final JToggleButton power = Led.toggle(tr("rack.power"), Led.GREEN);
+    final JButton stations = new JButton(tr("radio.stations"));
     final DotMatrixDisplay station = new DotMatrixDisplay(3, 64);
     final DotMatrixDisplay title = new DotMatrixDisplay(2, 110);
     final JLabel streamInfo = LcdPanel.caption(" ");
@@ -33,17 +35,17 @@ public final class WebRadioRack extends RackPanel {
 
     WebRadioRack(WebRadioPresenter p) {
         super(new BorderLayout(16, 0));
-        setDeviceLabel("RADIO", DeviceLabel.Symbol.RADIO);
+        setDeviceLabel(tr("plate.radio"), DeviceLabel.Symbol.RADIO);
         power.setSelected(true);
         power.addActionListener(e -> p.power(power.isSelected()));
         stations.addActionListener(e -> p.showStations());
-        stations.setToolTipText("Show the stations: favorites, search, genres, countries");
+        stations.setToolTipText(tr("radio.stations.tooltip"));
         previous = TransportIcon.button(Kind.PREVIOUS, p::previous);
         stop = TransportIcon.button(Kind.STOP, p::stop);
         play = TransportIcon.button(Kind.PLAY, p::play);
         next = TransportIcon.button(Kind.NEXT, p::next);
         record.addActionListener(e -> p.record(record.isSelected()));
-        record.setToolTipText("Record (right-click for recording options)");
+        record.setToolTipText(tr("radio.record.tooltip"));
         record.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mousePressed(java.awt.event.MouseEvent e) {
@@ -51,7 +53,7 @@ public final class WebRadioRack extends RackPanel {
             }
         });
 
-        station.setText("WEB RADIO");
+        station.setText(tr("radio.lcd.idle"));
         recording.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12));
         recording.setForeground(LcdPalette.PEAK);
         JPanel top = new JPanel(new BorderLayout(12, 0));
@@ -97,7 +99,7 @@ public final class WebRadioRack extends RackPanel {
 
         BufferBar() {
             setPreferredSize(new Dimension(300, 12));
-            getAccessibleContext().setAccessibleName("Buffer");
+            getAccessibleContext().setAccessibleName(tr("radio.buffer"));
         }
 
         void setFill(double value) {
@@ -112,7 +114,7 @@ public final class WebRadioRack extends RackPanel {
             Color c = LcdPanel.colorFor(this);
             g.setColor(c);
             g.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
-            g.drawString("BUF", 0, getHeight() - 2);
+            g.drawString(tr("radio.buffer.short"), 0, getHeight() - 2);
             int x = 30;
             int w = getWidth() - x - 1;
             g.drawRect(x, 3, w, getHeight() - 6);

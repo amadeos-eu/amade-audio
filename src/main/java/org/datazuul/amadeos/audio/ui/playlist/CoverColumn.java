@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.playlist;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.audio.ui.widget.CoverView;
 import org.datazuul.amadeos.audio.ui.widget.RackPanel;
 
@@ -44,7 +46,7 @@ public final class CoverColumn extends JPanel {
     /** The image, or null for the placeholder; {@code from} is shown below, e.g. {@code Cover Art Archive}. */
     public void setImage(byte[] image, String from) {
         cover.setImage(image);
-        source.setText(image == null || from == null || from.isBlank() ? " " : "Source: " + from);
+        source.setText(image == null || from == null || from.isBlank() ? " " : tr("cover.source", from));
     }
 
     private static String html(String s) {

@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.widget;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.commons.swing.AmadeUI;
 import org.datazuul.amadeos.commons.theme.DesktopTheme;
 
@@ -19,7 +21,7 @@ public final class CoverView extends Widget {
         setPreferredSize(d);
         setMinimumSize(d);
         setMaximumSize(d);
-        getAccessibleContext().setAccessibleName("Cover");
+        getAccessibleContext().setAccessibleName(tr("widget.cover"));
     }
 
     /** Shows the image; null or undecodable data shows the placeholder. */
