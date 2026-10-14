@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.service.player;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.audio.domain.PlaylistEntry;
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
@@ -42,7 +44,7 @@ public class TagReader {
             if (tag == null) return Optional.empty();
             Artwork art = tag.getFirstArtwork();
             if (art == null || art.getBinaryData() == null || art.getBinaryData().length == 0) return Optional.empty();
-            return Optional.of(new org.datazuul.amadeos.audio.domain.Artwork(art.getBinaryData(), "Embedded in the file"));
+            return Optional.of(new org.datazuul.amadeos.audio.domain.Artwork(art.getBinaryData(), tr("artwork.embedded")));
         } catch (Exception | LinkageError e) {
             return Optional.empty();
         }

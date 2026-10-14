@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.widget;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.commons.swing.AmadeUI;
 import org.datazuul.amadeos.commons.theme.DesktopTheme;
 
@@ -21,7 +23,7 @@ public final class SeekBar extends Widget {
     public SeekBar() {
         setPreferredSize(new Dimension(280, 18));
         setFocusable(true);
-        getAccessibleContext().setAccessibleName("Position");
+        getAccessibleContext().setAccessibleName(tr("widget.position"));
         MouseAdapter mouse = new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {

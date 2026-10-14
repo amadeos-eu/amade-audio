@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.rack.cd;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.audio.ui.widget.CoverView;
 import org.datazuul.amadeos.audio.ui.widget.LcdPanel;
 import org.datazuul.amadeos.audio.ui.widget.Led;
@@ -14,11 +16,11 @@ import java.awt.*;
 
 /** The CD rack: Power and Eject, the disc window with a small cover, track and time LCDs, transport. */
 public final class CdRack extends RackPanel {
-    final JToggleButton power = Led.toggle("Power", Led.GREEN);
-    final JButton eject = new JButton("Eject");
+    final JToggleButton power = Led.toggle(tr("rack.power"), Led.GREEN);
+    final JButton eject = new JButton(tr("cd.eject"));
     final CoverView cover = new CoverView(56);
-    final JLabel source = RackPanel.subLabel("AUDIO CD");
-    final JLabel album = new JLabel("No disc");
+    final JLabel source = RackPanel.subLabel(tr("cd.source"));
+    final JLabel album = new JLabel(tr("cd.no-disc"));
     final SevenSegmentDisplay track = new SevenSegmentDisplay("88", 44);
     final SevenSegmentDisplay time = new SevenSegmentDisplay("88:88", 44);
     final JLabel mode = LcdPanel.caption(" ");
@@ -32,7 +34,7 @@ public final class CdRack extends RackPanel {
 
     CdRack(CdPresenter p) {
         super(new BorderLayout(16, 0));
-        setDeviceLabel("CD", DeviceLabel.Symbol.DISC);
+        setDeviceLabel(tr("plate.cd"), DeviceLabel.Symbol.DISC);
         power.setSelected(true);
         power.addActionListener(e -> p.power(power.isSelected()));
         eject.addActionListener(e -> p.eject());
@@ -58,11 +60,11 @@ public final class CdRack extends RackPanel {
         info.add(text, BorderLayout.CENTER);
 
         trackLcd.add(track, BorderLayout.CENTER);
-        trackLcd.add(LcdPanel.caption("Track"), BorderLayout.SOUTH);
+        trackLcd.add(LcdPanel.caption(tr("lcd.track")), BorderLayout.SOUTH);
         JPanel timeBox = new JPanel(new BorderLayout());
         timeBox.setOpaque(false);
         timeBox.add(time, BorderLayout.CENTER);
-        timeBox.add(LcdPanel.caption("Min      Sec"), BorderLayout.SOUTH);
+        timeBox.add(LcdPanel.caption(tr("lcd.min-sec")), BorderLayout.SOUTH);
         timeLcd.add(timeBox, BorderLayout.CENTER);
         mode.setVerticalAlignment(SwingConstants.TOP);
         mode.setPreferredSize(new Dimension(64, 10));

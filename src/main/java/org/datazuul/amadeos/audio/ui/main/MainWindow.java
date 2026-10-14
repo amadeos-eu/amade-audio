@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.main;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.audio.ui.playlist.PlaylistPanel;
 import org.datazuul.amadeos.audio.ui.widget.RackRail;
 import org.datazuul.amadeos.commons.swing.AmadeUI;
@@ -27,7 +29,7 @@ final class MainWindow extends JFrame {
     private final JComponent playlistRail;
 
     MainWindow(HeaderRack header, Map<String, JComponent> rackComponents, PlaylistPanel playlist) {
-        super("Audio Station");
+        super(tr("app.title"));
         this.playlist = playlist;
         setUndecorated(true);
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);

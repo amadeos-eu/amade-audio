@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.rack.mixer;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import com.google.inject.Inject;
 import org.datazuul.amadeos.audio.domain.AudioPreferences;
 import org.datazuul.amadeos.audio.domain.OutputDevice;
@@ -88,7 +90,7 @@ public final class MixerPresenter {
     private void useOwnMaster(float value) {
         systemMaster = false;
         edt.execute(() -> {
-            rack.master.setToolTipText("Master volume of Audio Station (no wpctl or pactl found)");
+            rack.master.setToolTipText(tr("mixer.master.own"));
             float v = value >= 0 ? value : rack.master.value();
             engine.setMasterVolume(v);
         });
@@ -129,7 +131,7 @@ public final class MixerPresenter {
                         if (!Boolean.TRUE.equals(systemMaster)) {
                             systemMaster = true;
                             engine.setMasterVolume(1f);
-                            rack.master.setToolTipText("Master volume of the system (" + server.backend().name().toLowerCase() + ")");
+                            rack.master.setToolTipText(tr("mixer.master.system", server.backend().name().toLowerCase()));
                         }
                         if (!rack.master.isAdjusting() && pendingMaster < 0) {
                             rack.master.setValueQuietly((float) master.getAsDouble());
@@ -153,7 +155,7 @@ public final class MixerPresenter {
         rack.outputs.removeAll();
         for (AbstractButton b : java.util.Collections.list(rack.outputGroup.getElements())) rack.outputGroup.remove(b);
         if (devices.isEmpty()) {
-            rack.outputs.add(new JLabel("Sound server not available"));
+            rack.outputs.add(new JLabel(tr("mixer.no-sound-server")));
         }
         for (OutputDevice d : devices.subList(0, Math.min(4, devices.size()))) {
             String text = d.description().length() > 30 ? d.description().substring(0, 29) + "…" : d.description();

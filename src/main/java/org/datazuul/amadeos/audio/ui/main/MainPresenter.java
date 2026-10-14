@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.main;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import com.google.inject.Inject;
 import org.datazuul.amadeos.audio.domain.SourceId;
 import org.datazuul.amadeos.audio.repository.PreferencesStore;
@@ -15,6 +17,7 @@ import org.datazuul.amadeos.audio.ui.rack.player.PlayerPresenter;
 import org.datazuul.amadeos.audio.ui.rack.webradio.WebRadioPresenter;
 import org.datazuul.amadeos.audio.ui.widget.LcdPalette;
 import org.datazuul.amadeos.audio.ui.widget.Ticker;
+import org.datazuul.amadeos.commons.i18n.LocaleSettings;
 import org.datazuul.amadeos.commons.swing.EdtExecutor;
 
 import javax.swing.*;
@@ -44,6 +47,7 @@ public final class MainPresenter {
     private final ExecutorService executor;
     private final EdtExecutor edt;
     private final PasswordStore passwords;
+    private final LocaleSettings locales;
     private final PlaylistPanel playlist = new PlaylistPanel();
     private HeaderRack header;
     private MainWindow window;
@@ -51,7 +55,9 @@ public final class MainPresenter {
     @Inject
     public MainPresenter(PlaybackCoordinator coordinator, AudioEngine engine, MixerPresenter mixer, CdPresenter cd,
                          PlayerPresenter player, WebRadioPresenter webRadio, PreferencesStore preferences,
-                         ExecutorService executor, EdtExecutor edt, PasswordStore passwords) {
+                         ExecutorService executor, EdtExecutor edt, PasswordStore passwords,
+                         LocaleSettings locales) {
+        this.locales = locales;
         this.coordinator = coordinator;
         this.engine = engine;
         this.mixer = mixer;
@@ -180,7 +186,7 @@ public final class MainPresenter {
                         if (proxyPassword.isEmpty() || prefs.proxy().user().isEmpty()) passwords.delete(PROXY_PASSWORD);
                         else passwords.store(PROXY_PASSWORD, "amade-audio proxy " + prefs.proxy().host(), proxyPassword);
                     });
-                }, (candidate, password) -> NetworkProxy.INSTANCE.test(candidate, password), executor, edt);
+                }, (candidate, password) -> NetworkProxy.INSTANCE.test(candidate, password), executor, edt, locales);
         dialog.setProxyPassword(proxyPasswordForDialog());
         dialog.setVisible(true);
     }
@@ -197,22 +203,13 @@ public final class MainPresenter {
 
     void about() {
         Icon icon = window.getIconImages().isEmpty() ? null : new ImageIcon(window.getIconImages().get(0));
-        JOptionPane.showMessageDialog(window, """
-                        amade-audio — Audio Station for amadeOS
-                        Audio CDs, music files (MP3, Ogg Vorbis, AAC, FLAC, WAV, MIDI)
-                        and internet radio in a rack.
-
-                        Titles from MusicBrainz, covers from the Cover Art Archive,
-                        stations from radio-browser.info.
-
-                        Licensed under the EUPL-1.2.
-                        https://github.com/datazuul/amade-audio""",
-                "About Audio Station", JOptionPane.INFORMATION_MESSAGE, icon);
+        JOptionPane.showMessageDialog(window, tr("about.text") + "\nhttps://github.com/datazuul/amade-audio",
+                tr("about.title"), JOptionPane.INFORMATION_MESSAGE, icon);
     }
 
     void quit() {
         if (webRadio.isRecording() && JOptionPane.showConfirmDialog(window,
-                "A recording is running. Stop it and quit?", "Audio Station",
+                tr("quit.recording"), tr("app.title"),
                 JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
         webRadio.shutdown();
         engine.stopAll();

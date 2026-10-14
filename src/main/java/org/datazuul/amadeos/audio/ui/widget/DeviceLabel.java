@@ -49,6 +49,12 @@ public final class DeviceLabel {
         g.setFont(spaced);
         FontMetrics fm = g.getFontMetrics();
         int textW = fm.stringWidth(name);
+        // Translated names can be longer than the plate: shrink the letters until they fit.
+        for (float size = 10; textW > available && size >= 7; size--) {
+            g.setFont(spaced.deriveFont(size));
+            fm = g.getFontMetrics();
+            textW = fm.stringWidth(name);
+        }
         int tx = x + PLATE_WIDTH / 2 + fm.getAscent() / 2 - 1;
         int ty = y + h - 6 - Math.max(0, (available - textW) / 2);
         AffineTransform old = g.getTransform();

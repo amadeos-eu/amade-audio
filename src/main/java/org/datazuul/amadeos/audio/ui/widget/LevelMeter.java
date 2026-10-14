@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.widget;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -12,7 +14,7 @@ public final class LevelMeter extends Widget {
     public LevelMeter() {
         setPreferredSize(new Dimension(300, 30));
         setOpaque(false);
-        getAccessibleContext().setAccessibleName("Level meter");
+        getAccessibleContext().setAccessibleName(tr("widget.level-meter"));
     }
 
     public void setLevels(float l, float r) {

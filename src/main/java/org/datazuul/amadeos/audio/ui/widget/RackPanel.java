@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.widget;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.commons.swing.AmadeUI;
 
 import javax.swing.*;
@@ -51,13 +53,27 @@ public class RackPanel extends JPanel {
         JPanel column = new JPanel(new GridLayout(buttons.length, 1, 0, 8));
         column.setOpaque(false);
         for (AbstractButton b : buttons) {
-            b.setPreferredSize(new Dimension(100, 32));
+            b.setPreferredSize(new Dimension(sideWidth(b), 32));
             column.add(b);
         }
         JPanel wrap = new JPanel(new GridBagLayout());
         wrap.setOpaque(false);
         wrap.add(column);
         return wrap;
+    }
+
+    /** Texts of all side buttons; every rack uses the width of the longest, so the racks stay aligned. */
+    private static final String[] SIDE_TEXTS = {"rack.power", "cd.eject", "player.open", "radio.stations", "mixer.mute"};
+
+    /** At least 100 pixels, wider when a translation needs it. */
+    static int sideWidth(AbstractButton sample) {
+        FontMetrics fm = sample.getFontMetrics(sample.getFont());
+        Insets in = sample.getInsets();
+        int width = 100;
+        for (String key : SIDE_TEXTS) {
+            width = Math.max(width, fm.stringWidth(tr(key)) + 16 + sample.getIconTextGap() + in.left + in.right + 8);
+        }
+        return width;
     }
 
     /** A sunken info window in the theme's sunken colour. */

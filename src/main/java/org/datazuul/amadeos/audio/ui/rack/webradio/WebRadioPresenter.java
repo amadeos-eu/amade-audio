@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.rack.webradio;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import com.google.inject.Inject;
 import org.datazuul.amadeos.audio.domain.Artwork;
 import org.datazuul.amadeos.audio.domain.AudioLevels;
@@ -84,7 +86,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
         this.edt = edt;
         this.rack = new WebRadioRack(this);
         this.view = new StationBrowserView(this);
-        this.header = new PlaylistPanel.Header("STATIONS", view.tabs);
+        this.header = new PlaylistPanel.Header(tr("radio.list.header"), view.tabs);
         channel.addListener(this);
     }
 
@@ -137,7 +139,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
             }
             case SEARCH -> {
                 showList(List.of());
-                view.status.setText("Enter a name, genre or country and press Enter");
+                view.status.setText(tr("stations.search.hint"));
                 view.query.requestFocusInWindow();
             }
             case GENRES -> loadChoices(() -> directory.topTags(150), (tag, count) -> tag + " (" + count + ")");
@@ -166,7 +168,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
     private void loadChoices(ChoiceSource source, java.util.function.BiFunction<String, Integer, String> label) {
         showList(List.of());
         view.choices.clear();
-        view.status.setText("Loading...");
+        view.status.setText(tr("stations.loading"));
         int req = ++choiceRequest;
         StationBrowserView.Tab forTab = tab;
         executor.execute(() -> {
@@ -175,10 +177,11 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
                 edt.execute(() -> {
                     if (req != choiceRequest || tab != forTab) return;
                     items.forEach((k, v) -> view.choices.addElement(new StationBrowserView.Choice(k, label.apply(k, v))));
-                    view.status.setText(items.size() + (forTab == StationBrowserView.Tab.GENRES ? " genres" : " countries"));
+                    view.status.setText(tr(forTab == StationBrowserView.Tab.GENRES ? "stations.genres" : "stations.countries",
+                            items.size()));
                 });
             } catch (IOException e) {
-                edt.execute(() -> view.status.setText("radio-browser.info cannot be reached"));
+                edt.execute(() -> view.status.setText(tr("stations.unreachable")));
             }
         });
     }
@@ -214,7 +217,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
     }
 
     private void load(StationSource source, String what) {
-        view.status.setText("Searching...");
+        view.status.setText(tr("stations.searching"));
         int req = ++choiceRequest;
         executor.execute(() -> {
             try {
@@ -222,11 +225,11 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
                 edt.execute(() -> {
                     if (req != choiceRequest) return;
                     showList(found);
-                    view.status.setText(found.size() + " stations for " + what);
+                    view.status.setText(tr("stations.found", found.size(), what));
                 });
             } catch (IOException e) {
                 LOG.info("Station search failed: {}", e.toString());
-                edt.execute(() -> view.status.setText("radio-browser.info cannot be reached"));
+                edt.execute(() -> view.status.setText(tr("stations.unreachable")));
             }
         });
     }
@@ -247,7 +250,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
         if (s == null) s = current;
         if (s == null) return;
         try {
-            view.status.setText(favorites.add(s) ? s.name() + " added to the favorites" : s.name() + " is already a favorite");
+            view.status.setText(tr(favorites.add(s) ? "stations.added" : "stations.already", s.name()));
         } catch (RuntimeException e) {
             error(e.getMessage());
         }
@@ -257,7 +260,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
     void removeFavorite() {
         Station s = view.selected();
         if (s == null || tab != StationBrowserView.Tab.FAVORITES) return;
-        if (JOptionPane.showConfirmDialog(parent, "Remove " + s.name() + " from the favorites?", "Web Radio",
+        if (JOptionPane.showConfirmDialog(parent, tr("stations.remove.confirm", s.name()), tr("source.webradio"),
                 JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
         favorites.remove(s);
         showList(favorites.favorites());
@@ -274,7 +277,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
 
     private void updateInfo() {
         int n = favorites.favorites().size();
-        info.accept("Web Radio · " + n + (n == 1 ? " favorite" : " favorites"));
+        info.accept(tr("source.webradio") + " · " + tr("stations.favorites", n));
     }
 
     // ---- transport -------------------------------------------------------------------------------
@@ -309,7 +312,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
         streamTitle = null;
         view.model.setPlaying(station);
         showStation(station);
-        rack.title.setText("Connecting...");
+        rack.title.setText(tr("radio.connecting"));
         rack.streamInfo.setText(station.streamInfo());
         channel.stop();
         int req = ++request;
@@ -334,8 +337,8 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
             } catch (IOException e) {
                 edt.execute(() -> {
                     if (req != request) return;
-                    rack.title.setText("No connection");
-                    error("Cannot play " + station.name() + ":\n" + e.getMessage());
+                    rack.title.setText(tr("radio.no-connection"));
+                    error(tr("player.error.play", station.name(), e.getMessage()));
                 });
             }
         });
@@ -365,7 +368,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
             @Override
             public void failed(String reason) {
                 edt.execute(() -> {
-                    if (req == request) rack.title.setText("Connection lost: " + reason);
+                    if (req == request) rack.title.setText(tr("radio.connection-lost", reason));
                 });
             }
         };
@@ -421,7 +424,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
 
     private void showStation(Station station) {
         if (station == null) {
-            rack.station.setText("WEB RADIO");
+            rack.station.setText(tr("radio.lcd.idle"));
             rack.streamInfo.setText(" ");
             view.cover.setText("", "", "");
             view.cover.setImage(null, null);
@@ -460,15 +463,12 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
         RadioPlayback p = playback;
         if (p == null || channel.state() != TransportState.PLAYING) {
             rack.record.setSelected(false);
-            message("Start a station first, then press Record.");
+            message(tr("radio.record.no-station"));
             return;
         }
         if (!preferences.current().recordingNoticeShown()) {
-            int answer = JOptionPane.showConfirmDialog(parent, """
-                            Recordings of radio programmes are for your private use only.
-                            Do not pass them on or publish them.
-
-                            Start recording?""", "Record", JOptionPane.OK_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE);
+            int answer = JOptionPane.showConfirmDialog(parent, tr("radio.record.notice"), tr("transport.record"),
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE);
             if (answer != JOptionPane.OK_OPTION) {
                 rack.record.setSelected(false);
                 return;
@@ -497,7 +497,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
             r.start(p.session().lastTitle());
         } catch (IOException e) {
             rack.record.setSelected(false);
-            error("Cannot start recording: " + e.getMessage());
+            error(tr("radio.record.error", e.getMessage()));
             return;
         }
         recorder = r;
@@ -518,7 +518,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
     }
 
     private boolean confirmStopRecording() {
-        return JOptionPane.showConfirmDialog(parent, "A recording is running. Stop it?", "Web Radio",
+        return JOptionPane.showConfirmDialog(parent, tr("radio.record.stop-confirm"), tr("source.webradio"),
                 JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION;
     }
 
@@ -529,9 +529,10 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
     }
 
     private static String saved(List<Path> files) {
-        if (files.isEmpty()) return "Nothing was recorded.";
+        if (files.isEmpty()) return tr("radio.record.nothing");
         Path dir = files.get(0).getParent();
-        return files.size() == 1 ? "Saved " + files.get(0) : "Saved " + files.size() + " files in " + dir;
+        return files.size() == 1 ? tr("radio.record.saved-one", files.get(0).toString())
+                : tr("radio.record.saved-many", files.size(), String.valueOf(dir));
     }
 
     // ---- playback events -------------------------------------------------------------------------
@@ -551,7 +552,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
         edt.execute(() -> {
             if (state == TransportState.ERROR) {
                 stopRecording(true);
-                rack.title.setText("Error: " + message);
+                rack.title.setText(tr("radio.error", message));
             }
             if (state == TransportState.STOPPED && !channel.state().isActive()) {
                 stopRecording(true);
@@ -564,7 +565,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
     @Override
     public void finished(SourceId source) {
         edt.execute(() -> {
-            rack.title.setText("The station ended the stream");
+            rack.title.setText(tr("radio.ended"));
             view.model.setPlaying(null);
         });
     }
@@ -575,15 +576,15 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
     }
 
     private static String countryName(String code) {
-        String name = Locale.of("", code).getDisplayCountry(Locale.ENGLISH);
+        String name = Locale.of("", code).getDisplayCountry(Locale.getDefault());
         return name.isBlank() || name.equals(code) ? code : name;
     }
 
     private void error(String text) {
-        JOptionPane.showMessageDialog(parent, text, "Web Radio", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(parent, text, tr("source.webradio"), JOptionPane.ERROR_MESSAGE);
     }
 
     private void message(String text) {
-        JOptionPane.showMessageDialog(parent, text, "Web Radio", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(parent, text, tr("source.webradio"), JOptionPane.INFORMATION_MESSAGE);
     }
 }

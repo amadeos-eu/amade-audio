@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.main;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.audio.ui.widget.Led;
 import org.datazuul.amadeos.audio.ui.widget.RackPanel;
 import org.datazuul.amadeos.audio.ui.widget.Widget;
@@ -19,52 +21,54 @@ import java.util.function.Predicate;
  * buttons. It replaces the window frame; drag it to move the window.
  */
 final class HeaderRack extends RackPanel {
-    static final String[][] RACKS = {{"mixer", "Mixer"}, {"cd", "CD"}, {"player", "Player"}, {"webradio", "Web Radio"}};
+    /** Rack ids; the button texts come from {@code rack.<id>}. */
+    static final String[] RACKS = {"mixer", "cd", "player", "webradio"};
 
     final JButton menu = new JButton(new MenuIcon());
     final Map<String, JToggleButton> rackButtons = new LinkedHashMap<>();
     final JButton minimize = new JButton(new WindowIcon(false));
     final JButton close = new JButton(new WindowIcon(true));
-    final JButton power = new JButton("Power");
+    final JButton power = new JButton(tr("header.power"));
 
     HeaderRack(MainPresenter p, Predicate<String> lit) {
         super(new BorderLayout(16, 0));
         setBorder(BorderFactory.createCompoundBorder(AmadeUI.raised(), BorderFactory.createEmptyBorder(8, 12, 8, 12)));
-        menu.setToolTipText("Menu");
-        menu.getAccessibleContext().setAccessibleName("Menu");
+        menu.setToolTipText(tr("header.menu"));
+        menu.getAccessibleContext().setAccessibleName(tr("header.menu"));
         menu.setMargin(new Insets(4, 8, 4, 8));
         JPopupMenu popup = new JPopupMenu();
-        popup.add(item("Open Files...", p::openFiles));
-        popup.add(item("Open Folder...", p::openFolder));
+        popup.add(item(tr("menu.open-files"), p::openFiles));
+        popup.add(item(tr("menu.open-folder"), p::openFolder));
         popup.addSeparator();
-        popup.add(item("Settings...", () -> p.openOptions("Recording")));
-        popup.add(item("About Audio Station", p::about));
+        popup.add(item(tr("menu.settings"), () -> p.openOptions("Recording")));
+        popup.add(item(tr("menu.about"), p::about));
         popup.addSeparator();
-        popup.add(item("Quit", p::quit));
+        popup.add(item(tr("menu.quit"), p::quit));
         menu.addActionListener(e -> popup.show(menu, 0, menu.getHeight()));
 
         JPanel buttons = new JPanel(new GridLayout(1, RACKS.length, 0, 0));
         buttons.setOpaque(false);
-        for (String[] rack : RACKS) {
-            JToggleButton b = new JToggleButton(rack[1]);
-            b.setIcon(new Led(Led.GREEN, () -> lit.test(rack[0])));
+        for (String rack : RACKS) {
+            String name = tr("rack." + rack);
+            JToggleButton b = new JToggleButton(name);
+            b.setIcon(new Led(Led.GREEN, () -> lit.test(rack)));
             b.setIconTextGap(10);
             b.setSelected(true);
-            b.setToolTipText("Show or hide the " + rack[1] + " rack");
+            b.setToolTipText(tr("header.show-rack", name));
             b.setMargin(new Insets(8, 14, 8, 14));
-            b.addActionListener(e -> p.setRackVisible(rack[0], b.isSelected()));
-            rackButtons.put(rack[0], b);
+            b.addActionListener(e -> p.setRackVisible(rack, b.isSelected()));
+            rackButtons.put(rack, b);
             buttons.add(b);
         }
 
-        minimize.setToolTipText("Minimize");
-        minimize.getAccessibleContext().setAccessibleName("Minimize");
-        close.setToolTipText("Close");
-        close.getAccessibleContext().setAccessibleName("Close");
+        minimize.setToolTipText(tr("header.minimize"));
+        minimize.getAccessibleContext().setAccessibleName(tr("header.minimize"));
+        close.setToolTipText(tr("header.close"));
+        close.getAccessibleContext().setAccessibleName(tr("header.close"));
         for (JButton b : new JButton[]{minimize, close}) b.setMargin(new Insets(2, 6, 2, 6));
         minimize.addActionListener(e -> p.minimize());
         close.addActionListener(e -> p.quit());
-        power.setToolTipText("Switch off (quit)");
+        power.setToolTipText(tr("header.power.tooltip"));
         power.setMargin(new Insets(2, 8, 2, 8));
         power.setFont(power.getFont().deriveFont(11f));
         power.addActionListener(e -> p.quit());
@@ -143,7 +147,7 @@ final class HeaderRack extends RackPanel {
 
         Logo() {
             setPreferredSize(new Dimension(450, 56));
-            getAccessibleContext().setAccessibleName("Audio Station");
+            getAccessibleContext().setAccessibleName(tr("app.title"));
         }
 
         @Override
@@ -163,7 +167,7 @@ final class HeaderRack extends RackPanel {
             int w = g2.getFontMetrics().stringWidth(text);
             g2.setFont(SMALL);
             g2.setColor(t.textInactive());
-            g2.drawString("for amadeOS", w + 14, y);
+            g2.drawString(tr("header.for-amadeos"), w + 14, y);
             g2.dispose();
         }
 

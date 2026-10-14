@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.service.metadata;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import com.google.inject.Inject;
 import org.datazuul.amadeos.audio.domain.AlbumInfo;
 import org.datazuul.amadeos.audio.domain.Artwork;
@@ -78,13 +80,13 @@ public final class ArtworkService {
         if (station.favicon().isBlank()) return Optional.empty();
         String key = hash(station.favicon());
         Optional<byte[]> cached = cache.logo(key);
-        if (cached.isPresent()) return Optional.of(new Artwork(cached.get(), "Station logo"));
+        if (cached.isPresent()) return Optional.of(new Artwork(cached.get(), tr("artwork.station-logo")));
         try {
             URI uri = URI.create(station.favicon());
             if (!"http".equals(uri.getScheme()) && !"https".equals(uri.getScheme())) return Optional.empty();
             Optional<byte[]> data = http.get(uri, "image/*").filter(d -> d.length > 0 && d.length <= MAX_IMAGE_BYTES);
             data.ifPresent(d -> cache.storeLogo(key, d));
-            return data.map(d -> new Artwork(d, "Station logo"));
+            return data.map(d -> new Artwork(d, tr("artwork.station-logo")));
         } catch (IOException | IllegalArgumentException e) {
             LOG.debug("No logo for {}: {}", station.name(), e.toString());
             return Optional.empty();

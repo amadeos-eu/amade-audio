@@ -81,6 +81,15 @@ applies to everything amade-audio fetches: radio streams and playlists, radio-br
 MusicBrainz, the Cover Art Archive and station logos. Basic authentication also works for HTTPS
 (the JDK switches it off for tunnels by default; amade-audio switches it back on).
 
+### Languages
+
+Audio Station speaks English, Deutsch, Français, Español and Italiano. It follows the language of the
+amadeOS desktop; *Settings...* → *Display* → *Language* sets an own language for Audio Station alone
+(from the next start). Outside amadeOS it uses `LANG`. Name plates, LCD captions and the dot-matrix
+display are translated too; the dot-matrix font draws accented letters (é, à, ç, ñ, ...) and ¿ ¡.
+The texts live in `src/main/resources/org/datazuul/amadeos/audio/messages*.properties` (UTF-8); a
+test checks that every translation is complete.
+
 ## Architecture
 
 Java 21, Swing, Guice; same structure as [amade-pad](https://github.com/datazuul/amade-pad) and
@@ -148,6 +157,7 @@ front panel lists it with the multimedia applications.
 - [x] Racks: mixer, CD, file player, web radio; playlist panel following the active device
 - [x] CD titles from CD-Text / MusicBrainz, covers from the Cover Art Archive, editable titles
 - [x] Recording internet radio, optionally split by title
+- [x] English, German, French, Spanish and Italian
 - [ ] Ripping CDs to FLAC / Ogg
 - [ ] Timed recordings
 - [ ] Seeking within MP3/OGG without decoding from the start

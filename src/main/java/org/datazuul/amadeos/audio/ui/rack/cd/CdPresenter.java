@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.rack.cd;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import com.google.inject.Inject;
 import org.datazuul.amadeos.audio.domain.AlbumInfo;
 import org.datazuul.amadeos.audio.domain.Artwork;
@@ -49,7 +51,9 @@ public final class CdPresenter implements AudioChannel.Listener {
     private final EdtExecutor edt;
     private final CdRack rack;
     private final CdTrackListView list;
-    private final PlaylistPanel.Header header = new PlaylistPanel.Header("TRACK LIST", null);
+    /** Source of titles typed in by the user, as stored in the metadata cache. */
+    static final String EDITED = "Edited";
+    private final PlaylistPanel.Header header = new PlaylistPanel.Header(tr("cd.list.header"), null);
     private Component parent;
     private Consumer<String> info = s -> {
     };
@@ -124,8 +128,8 @@ public final class CdPresenter implements AudioChannel.Listener {
     private void discRead(boolean available, Optional<CdDisc> found) {
         if (!available) {
             if (disc != null) disc = null;
-            rack.source.setText("NO CD DRIVE");
-            rack.album.setText("No CD drive or libcdio not installed");
+            rack.source.setText(tr("cd.no-drive"));
+            rack.album.setText(tr("cd.no-drive.detail"));
             return;
         }
         String id = found.map(CdDisc::discId).orElse(null);
@@ -153,28 +157,28 @@ public final class CdPresenter implements AudioChannel.Listener {
         tracks = List.of();
         album = AlbumInfo.unknown(0);
         current = -1;
-        rack.source.setText("AUDIO CD · " + drive.device());
-        rack.album.setText("No disc");
+        rack.source.setText(tr("cd.source") + " · " + drive.device());
+        rack.album.setText(tr("cd.no-disc"));
         rack.track.setText("  ");
         rack.time.setText("  :  ");
         rack.cover.setImage(null);
         list.model.set(tracks, album);
         list.model.setPlaying(-1);
-        list.cover.setText("No disc", "", "");
+        list.cover.setText(tr("cd.no-disc"), "", "");
         list.cover.setImage(null, null);
         updateInfo();
     }
 
     private void showAlbum() {
-        String src = album.source().isEmpty() ? "" : " · " + album.source().toUpperCase();
-        rack.source.setText("AUDIO CD" + src);
+        String src = album.source().isEmpty() ? "" : " · " + sourceName().toUpperCase(java.util.Locale.getDefault());
+        rack.source.setText(tr("cd.source") + src);
         rack.album.setText(album.isKnown()
-                ? (album.album().isEmpty() ? "Audio CD" : album.album()) + (album.artist().isEmpty() ? "" : " — " + album.artist())
-                : "Audio CD · " + tracks.size() + " tracks");
+                ? (album.album().isEmpty() ? tr("cd.audio-cd") : album.album()) + (album.artist().isEmpty() ? "" : " — " + album.artist())
+                : tr("cd.audio-cd") + " · " + tr("cd.tracks", tracks.size()));
         list.model.set(tracks, album);
         list.model.setPlaying(current);
         String details = String.join(" · ", List.of(album.year(), album.label()).stream().filter(s -> !s.isEmpty()).toList());
-        list.cover.setText(album.album().isEmpty() ? "Audio CD" : album.album(), album.artist(), details);
+        list.cover.setText(album.album().isEmpty() ? tr("cd.audio-cd") : album.album(), album.artist(), details);
         rack.track.setText(LcdText.number(current < 0 ? tracks.size() : current + 1));
         if (current < 0) rack.time.setText(LcdText.time(disc == null ? -1 : disc.toc().length().toNanos() / 1000));
         updateInfo();
@@ -182,12 +186,18 @@ public final class CdPresenter implements AudioChannel.Listener {
 
     private void updateInfo() {
         if (disc == null) {
-            info.accept("Audio CD · no disc");
+            info.accept(tr("cd.audio-cd") + " · " + tr("cd.no-disc.lower"));
             return;
         }
-        String text = "Audio CD · " + tracks.size() + " tracks · " + PlaylistPanel.time(disc.toc().length().toSeconds());
-        if (!album.source().isEmpty()) text += " · " + album.source();
+        String text = tr("cd.audio-cd") + " · " + tr("cd.tracks", tracks.size()) + " · "
+                + PlaylistPanel.time(disc.toc().length().toSeconds());
+        if (!album.source().isEmpty()) text += " · " + sourceName();
         info.accept(text);
+    }
+
+    /** Where the titles come from; "Edited" (stored in the cache) is shown translated. */
+    private String sourceName() {
+        return album.source().equals(EDITED) ? tr("cd.source.edited") : album.source();
     }
 
     private void loadArtwork() {
@@ -214,7 +224,7 @@ public final class CdPresenter implements AudioChannel.Listener {
                 edt.execute(() -> found(forDisc, candidates, explicit));
             } catch (IOException e) {
                 LOG.info("MusicBrainz lookup failed: {}", e.toString());
-                if (explicit) edt.execute(() -> error("MusicBrainz cannot be reached: " + e.getMessage()));
+                if (explicit) edt.execute(() -> error(tr("cd.musicbrainz.unreachable", e.getMessage())));
             }
         });
     }
@@ -222,7 +232,7 @@ public final class CdPresenter implements AudioChannel.Listener {
     private void found(CdDisc forDisc, List<AlbumInfo> candidates, boolean explicit) {
         if (disc != forDisc) return;
         if (candidates.isEmpty()) {
-            if (explicit) message("MusicBrainz does not know this disc.\nUse \"Edit Titles...\" to name the tracks.");
+            if (explicit) message(tr("cd.musicbrainz.unknown"));
             return;
         }
         AlbumInfo chosen = candidates.size() == 1 ? candidates.get(0) : choose(candidates);
@@ -248,9 +258,9 @@ public final class CdPresenter implements AudioChannel.Listener {
         choices.setSelectedIndex(0);
         choices.setVisibleRowCount(Math.min(8, candidates.size()));
         JPanel panel = new JPanel(new BorderLayout(0, 8));
-        panel.add(new JLabel("MusicBrainz knows several releases with this disc. Which one is it?"), BorderLayout.NORTH);
+        panel.add(new JLabel(tr("cd.musicbrainz.choose")), BorderLayout.NORTH);
         panel.add(new JScrollPane(choices), BorderLayout.CENTER);
-        int answer = JOptionPane.showConfirmDialog(parent, panel, "Audio CD", JOptionPane.OK_CANCEL_OPTION,
+        int answer = JOptionPane.showConfirmDialog(parent, panel, tr("cd.audio-cd"), JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.QUESTION_MESSAGE);
         return answer == JOptionPane.OK_OPTION ? choices.getSelectedValue() : null;
     }
@@ -288,7 +298,7 @@ public final class CdPresenter implements AudioChannel.Listener {
                     channel.play(source, 0);
                 });
             } catch (IOException e) {
-                edt.execute(() -> error("Cannot play track " + track.number() + ": " + e.getMessage()));
+                edt.execute(() -> error(tr("cd.error.play", track.number(), e.getMessage())));
             }
         });
     }
@@ -344,7 +354,7 @@ public final class CdPresenter implements AudioChannel.Listener {
             try {
                 drive.eject();
             } catch (IOException e) {
-                edt.execute(() -> error("Cannot eject: " + e.getMessage()));
+                edt.execute(() -> error(tr("cd.error.eject", e.getMessage())));
             }
         });
         disc = null;
@@ -369,7 +379,7 @@ public final class CdPresenter implements AudioChannel.Listener {
         }
         shuffle = newShuffle;
         repeat = newRepeat;
-        rack.mode.setText("<html>" + (shuffle ? "SHUFFLE" : "") + "<br>" + (repeat ? "REPEAT" : "") + "</html>");
+        rack.mode.setText("<html>" + (shuffle ? tr("lcd.shuffle") : "") + "<br>" + (repeat ? tr("lcd.repeat") : "") + "</html>");
     }
 
     void lookUp() {
@@ -381,7 +391,7 @@ public final class CdPresenter implements AudioChannel.Listener {
         if (disc == null) return;
         JTextField albumField = new JTextField(album.album(), 30);
         JTextField artistField = new JTextField(album.artist(), 30);
-        DefaultTableModel model = new DefaultTableModel(new Object[]{"Track", "Title", "Artist"}, 0) {
+        DefaultTableModel model = new DefaultTableModel(new Object[]{tr("column.track"), tr("column.title"), tr("column.artist")}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return column > 0;
@@ -396,16 +406,16 @@ public final class CdPresenter implements AudioChannel.Listener {
         table.setRowHeight(22);
         table.getColumnModel().getColumn(0).setMaxWidth(60);
         JPanel fields = new JPanel(new GridLayout(2, 2, 8, 6));
-        fields.add(new JLabel("Album:"));
+        fields.add(new JLabel(tr("cd.edit.album")));
         fields.add(albumField);
-        fields.add(new JLabel("Artist:"));
+        fields.add(new JLabel(tr("cd.edit.artist")));
         fields.add(artistField);
         JPanel panel = new JPanel(new BorderLayout(0, 10));
         panel.add(fields, BorderLayout.NORTH);
         JScrollPane scroll = new JScrollPane(table);
         scroll.setPreferredSize(new Dimension(520, 300));
         panel.add(scroll, BorderLayout.CENTER);
-        if (JOptionPane.showConfirmDialog(parent, panel, "Edit Titles", JOptionPane.OK_CANCEL_OPTION,
+        if (JOptionPane.showConfirmDialog(parent, panel, tr("cd.edit.title"), JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
         if (table.isEditing()) table.getCellEditor().stopCellEditing();
         List<String> titles = new ArrayList<>();
@@ -415,7 +425,7 @@ public final class CdPresenter implements AudioChannel.Listener {
             artists.add(String.valueOf(model.getValueAt(i, 2)));
         }
         album = new AlbumInfo(albumField.getText(), artistField.getText(), album.year(), album.label(), titles, artists,
-                album.releaseId(), album.releaseGroupId(), "Edited");
+                album.releaseId(), album.releaseGroupId(), EDITED);
         CdDisc forDisc = disc;
         AlbumInfo edited = album;
         executor.execute(() -> metadata.remember(forDisc, edited));
@@ -429,7 +439,7 @@ public final class CdPresenter implements AudioChannel.Listener {
         edt.execute(() -> {
             if (state == TransportState.ERROR) {
                 list.model.setPlaying(-1);
-                error("CD playback failed: " + message);
+                error(tr("cd.error.playback", message));
             }
             if (state == TransportState.STOPPED && !channel.state().isActive()) list.model.setPlaying(-1);
             if (state == TransportState.PLAYING) list.model.setPlaying(current);
@@ -486,11 +496,11 @@ public final class CdPresenter implements AudioChannel.Listener {
     }
 
     private void error(String text) {
-        JOptionPane.showMessageDialog(parent, text, "Audio Station", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(parent, text, tr("app.title"), JOptionPane.ERROR_MESSAGE);
     }
 
     private void message(String text) {
-        JOptionPane.showMessageDialog(parent, text, "Audio Station", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(parent, text, tr("app.title"), JOptionPane.INFORMATION_MESSAGE);
     }
 
     private static void closeQuietly(PcmSource source) {

@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.service.net;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.audio.domain.ProxySettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,8 +93,9 @@ public final class NetworkProxy extends ProxySelector {
     /** E.g. {@code proxy.example:3128 (from https_proxy)} or {@code direct connection}. */
     public String describe() {
         Optional<Endpoint> e = endpoint(true);
-        if (e.isEmpty()) return "direct connection";
-        return e.get() + (settings.mode() == ProxySettings.Mode.SYSTEM ? " (from the environment)" : "");
+        if (e.isEmpty()) return tr("proxy.direct");
+        return settings.mode() == ProxySettings.Mode.SYSTEM ? tr("proxy.from-environment", e.get().toString())
+                : e.get().toString();
     }
 
     @Override
@@ -189,16 +192,16 @@ public final class NetworkProxy extends ProxySelector {
                 .header("User-Agent", "amade-audio/0.1").timeout(Duration.ofSeconds(10)).GET().build();
         try {
             HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
-            if (response.statusCode() == 407) return "The proxy asks for a user name and password (HTTP 407).";
-            if (response.statusCode() >= 400) return "Connected, but the server answered HTTP " + response.statusCode() + ".";
-            return "Connection works (" + probe.describe() + ").";
+            if (response.statusCode() == 407) return tr("proxy.test.credentials-needed");
+            if (response.statusCode() >= 400) return tr("proxy.test.http-error", String.valueOf(response.statusCode()));
+            return tr("proxy.test.ok", probe.describe());
         } catch (IOException e) {
             String m = e.getMessage() == null ? e.toString() : e.getMessage();
-            if (m.contains("407")) return "The proxy refused the user name or password (HTTP 407).";
-            return "No connection via " + probe.describe() + ": " + m;
+            if (m.contains("407")) return tr("proxy.test.credentials-refused");
+            return tr("proxy.test.failed", probe.describe(), m);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return "Interrupted";
+            return tr("proxy.test.interrupted");
         }
     }
 }

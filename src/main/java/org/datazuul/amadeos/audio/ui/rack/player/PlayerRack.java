@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.rack.player;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.audio.ui.widget.LcdPanel;
 import org.datazuul.amadeos.audio.ui.widget.Led;
 import org.datazuul.amadeos.audio.ui.widget.DeviceLabel;
@@ -20,10 +22,10 @@ import java.util.Map;
 public final class PlayerRack extends RackPanel {
     static final String[] FORMATS = {"MP3", "OGG", "FLAC", "WAV", "AAC", "MIDI"};
 
-    final JToggleButton power = Led.toggle("Power", Led.GREEN);
-    final JButton open = new JButton("Open...");
-    final JLabel folder = RackPanel.subLabel("LOCAL FILES");
-    final JLabel file = new JLabel("No file");
+    final JToggleButton power = Led.toggle(tr("rack.power"), Led.GREEN);
+    final JButton open = new JButton(tr("player.open"));
+    final JLabel folder = RackPanel.subLabel(tr("player.local-files"));
+    final JLabel file = new JLabel(tr("player.no-file"));
     final Map<String, JLabel> badges = new LinkedHashMap<>();
     final SeekBar seek = new SeekBar();
     final SevenSegmentDisplay number = new SevenSegmentDisplay("88", 40);
@@ -38,7 +40,7 @@ public final class PlayerRack extends RackPanel {
 
     PlayerRack(PlayerPresenter p) {
         super(new BorderLayout(16, 0));
-        setDeviceLabel("PLAYER", DeviceLabel.Symbol.FILES);
+        setDeviceLabel(tr("plate.player"), DeviceLabel.Symbol.FILES);
         power.setSelected(true);
         power.addActionListener(e -> p.power(power.isSelected()));
         open.addActionListener(e -> p.openFiles());
@@ -87,11 +89,11 @@ public final class PlayerRack extends RackPanel {
         JPanel numberBox = new JPanel(new BorderLayout());
         numberBox.setOpaque(false);
         numberBox.add(number, BorderLayout.CENTER);
-        numberBox.add(LcdPanel.caption("File"), BorderLayout.SOUTH);
+        numberBox.add(LcdPanel.caption(tr("lcd.file")), BorderLayout.SOUTH);
         JPanel timeBox = new JPanel(new BorderLayout());
         timeBox.setOpaque(false);
         timeBox.add(time, BorderLayout.CENTER);
-        timeBox.add(LcdPanel.caption("Min      Sec"), BorderLayout.SOUTH);
+        timeBox.add(LcdPanel.caption(tr("lcd.min-sec")), BorderLayout.SOUTH);
         lcd.add(numberBox, BorderLayout.WEST);
         lcd.add(spectrum, BorderLayout.CENTER);
         lcd.add(timeBox, BorderLayout.EAST);

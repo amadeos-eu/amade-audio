@@ -1,5 +1,7 @@
 package org.datazuul.amadeos.audio.ui.rack.webradio;
 
+import static org.datazuul.amadeos.audio.i18n.Texts.tr;
+
 import org.datazuul.amadeos.audio.domain.Station;
 import org.datazuul.amadeos.audio.ui.playlist.CoverColumn;
 import org.datazuul.amadeos.audio.ui.playlist.PlayingRenderer;
@@ -16,12 +18,11 @@ import java.util.List;
 /** Stations in the playlist panel: favourites, search, genres and countries, as in dz-radio. */
 public final class StationBrowserView {
     enum Tab {
-        FAVORITES("Favorites"), SEARCH("Search"), GENRES("Genres"), COUNTRIES("Countries");
+        FAVORITES, SEARCH, GENRES, COUNTRIES;
 
-        final String label;
-
-        Tab(String label) {
-            this.label = label;
+        /** From {@code stations.tab.<tab>}. */
+        String label() {
+            return tr("stations.tab." + name().toLowerCase(java.util.Locale.ROOT));
         }
     }
 
@@ -31,11 +32,11 @@ public final class StationBrowserView {
     final DefaultListModel<Choice> choices = new DefaultListModel<>();
     final JList<Choice> choiceList = new JList<>(choices);
     final JScrollPane choiceScroll = new JScrollPane(choiceList);
-    final JButton play = new JButton("Play");
-    final JButton add = new JButton("Add to Favorites");
-    final JButton remove = new JButton("Remove");
-    final JButton up = new JButton("Up");
-    final JButton down = new JButton("Down");
+    final JButton play = new JButton(tr("stations.play"));
+    final JButton add = new JButton(tr("stations.add"));
+    final JButton remove = new JButton(tr("stations.remove"));
+    final JButton up = new JButton(tr("stations.up"));
+    final JButton down = new JButton(tr("stations.down"));
     final JTextField query = new JTextField(24);
     final JLabel status = new JLabel(" ");
     final JPanel tabs = new JPanel(new GridLayout(1, Tab.values().length, 2, 0));
@@ -82,13 +83,13 @@ public final class StationBrowserView {
         up.addActionListener(e -> p.moveFavorite(-1));
         down.addActionListener(e -> p.moveFavorite(1));
         query.addActionListener(e -> p.search(query.getText()));
-        query.getAccessibleContext().setAccessibleName("Search stations");
+        query.getAccessibleContext().setAccessibleName(tr("stations.search.accessible"));
         status.setFont(status.getFont().deriveFont(Font.PLAIN, 12f));
 
         ButtonGroup group = new ButtonGroup();
         tabs.setOpaque(false);
         for (Tab tab : Tab.values()) {
-            JToggleButton b = new JToggleButton(tab.label);
+            JToggleButton b = new JToggleButton(tab.label());
             b.addActionListener(e -> p.showTab(tab));
             group.add(b);
             tabs.add(b);
@@ -99,7 +100,7 @@ public final class StationBrowserView {
         lists.setOpaque(false);
         lists.add(choiceScroll, BorderLayout.WEST);
         lists.add(PlaylistPanel.scroll(table), BorderLayout.CENTER);
-        JLabel searchLabel = new JLabel("Search");
+        JLabel searchLabel = new JLabel(tr("stations.tab.search"));
         searchLabel.setLabelFor(query);
         component = PlaylistPanel.view(cover, lists, PlaylistPanel.buttonRow(
                 new JComponent[]{play, add, remove, up, down, searchLabel, query}, new JComponent[]{status}));
@@ -123,7 +124,8 @@ public final class StationBrowserView {
 
     /** Stations of the current tab. */
     static final class Model extends AbstractTableModel {
-        private static final String[] COLUMNS = {"#", "Station", "Country", "Genre", "Codec", "Bitrate"};
+        private static final String[] COLUMNS = {tr("column.number"), tr("column.station"), tr("column.country"),
+                tr("column.genre"), tr("column.codec"), tr("column.bitrate")};
         List<Station> stations = List.of();
         int playing = -1;
 
