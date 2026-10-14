@@ -58,6 +58,16 @@ public final class PlaylistPanel extends RackPanel {
         setPreferredSize(new Dimension(100, HEIGHT));
     }
 
+    @Override
+    public Dimension getMinimumSize() {
+        return new Dimension(100, 180);
+    }
+
+    @Override
+    public Dimension getMaximumSize() {
+        return new Dimension(Short.MAX_VALUE, Short.MAX_VALUE);
+    }
+
     /** Registers a device's view. */
     public void addView(SourceId id, Header header, JComponent view) {
         headers.put(id, header);

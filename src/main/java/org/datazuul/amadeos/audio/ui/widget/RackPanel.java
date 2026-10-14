@@ -13,6 +13,17 @@ public class RackPanel extends JPanel {
         setBorder(BorderFactory.createCompoundBorder(AmadeUI.raised(), BorderFactory.createEmptyBorder(10, 14, 10, 14)));
     }
 
+    /** Racks keep their height; only the playlist panel shrinks on small screens. */
+    @Override
+    public Dimension getMinimumSize() {
+        return new Dimension(super.getMinimumSize().width, getPreferredSize().height);
+    }
+
+    @Override
+    public Dimension getMaximumSize() {
+        return new Dimension(Short.MAX_VALUE, getPreferredSize().height);
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         g.setColor(AmadeUI.theme().base());

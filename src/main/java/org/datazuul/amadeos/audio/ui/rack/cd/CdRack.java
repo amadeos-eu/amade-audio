@@ -43,11 +43,15 @@ public final class CdRack extends RackPanel {
         next = TransportIcon.button(Kind.NEXT, p::next);
 
         JPanel info = RackPanel.infoWindow(new BorderLayout(14, 0));
-        JPanel text = new JPanel(new GridLayout(2, 1, 0, 2));
+        JPanel text = new JPanel();
         text.setOpaque(false);
+        text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
         album.setFont(album.getFont().deriveFont(Font.BOLD, 16f));
+        text.add(Box.createVerticalGlue());
         text.add(source);
+        text.add(Box.createVerticalStrut(3));
         text.add(album);
+        text.add(Box.createVerticalGlue());
         info.add(cover, BorderLayout.WEST);
         info.add(text, BorderLayout.CENTER);
 

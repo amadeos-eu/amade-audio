@@ -49,7 +49,12 @@ public final class PlayerRack extends RackPanel {
 
         JPanel info = RackPanel.infoWindow(new BorderLayout(0, 4));
         file.setFont(file.getFont().deriveFont(Font.BOLD, 15f));
-        JPanel badgeRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0));
+        JPanel badgeRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0)) {
+            @Override
+            public Dimension getMaximumSize() {
+                return getPreferredSize();
+            }
+        };
         badgeRow.setOpaque(false);
         ((FlowLayout) badgeRow.getLayout()).setAlignOnBaseline(true);
         for (String f : FORMATS) {
@@ -57,17 +62,25 @@ public final class PlayerRack extends RackPanel {
             badges.put(f, badge);
             badgeRow.add(badge);
         }
-        JPanel text = new JPanel(new GridLayout(3, 1, 0, 2));
+        JPanel text = new JPanel();
         text.setOpaque(false);
-        text.add(folder);
-        text.add(file);
-        text.add(badgeRow);
+        text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
+        for (JComponent c : new JComponent[]{folder, file, badgeRow}) {
+            c.setAlignmentX(LEFT_ALIGNMENT);
+            text.add(c);
+            text.add(Box.createVerticalStrut(3));
+        }
         info.add(text, BorderLayout.CENTER);
-        JPanel left = new JPanel(new BorderLayout(0, 8));
+        JPanel left = new JPanel(new BorderLayout(0, 8)) {
+            /** Fixed width, height from the content. */
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(260, super.getPreferredSize().height);
+            }
+        };
         left.setOpaque(false);
         left.add(info, BorderLayout.CENTER);
         left.add(seek, BorderLayout.SOUTH);
-        left.setPreferredSize(new Dimension(260, 10));
 
         JPanel numberBox = new JPanel(new BorderLayout());
         numberBox.setOpaque(false);

@@ -74,8 +74,23 @@ final class MainWindow extends JFrame {
         Point location = isShowing() ? getLocation() : null;
         stack.revalidate();
         Dimension pref = stack.getPreferredSize();
-        setSize(new Dimension(Math.max(WIDTH, pref.width), pref.height));
+        Rectangle screen = usableScreen();
+        setSize(new Dimension(Math.max(WIDTH, pref.width), Math.min(pref.height, screen.height)));
         validate();
-        if (location != null) setLocation(location);
+        if (location != null) {
+            // Keep the bottom on the screen when the window grows.
+            int y = Math.min(location.y, screen.y + screen.height - getHeight());
+            setLocation(location.x, Math.max(screen.y, y));
+        }
+    }
+
+    /** The screen area without panels, of the screen the window is on. */
+    private Rectangle usableScreen() {
+        GraphicsConfiguration gc = getGraphicsConfiguration();
+        if (gc == null) gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+        Rectangle bounds = gc.getBounds();
+        Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
+        return new Rectangle(bounds.x + insets.left, bounds.y + insets.top,
+                bounds.width - insets.left - insets.right, bounds.height - insets.top - insets.bottom);
     }
 }
