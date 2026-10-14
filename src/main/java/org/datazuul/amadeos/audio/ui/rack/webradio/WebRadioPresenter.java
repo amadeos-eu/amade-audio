@@ -1,0 +1,581 @@
+package org.datazuul.amadeos.audio.ui.rack.webradio;
+
+import com.google.inject.Inject;
+import org.datazuul.amadeos.audio.domain.Artwork;
+import org.datazuul.amadeos.audio.domain.AudioLevels;
+import org.datazuul.amadeos.audio.domain.SourceId;
+import org.datazuul.amadeos.audio.domain.Station;
+import org.datazuul.amadeos.audio.domain.TransportState;
+import org.datazuul.amadeos.audio.repository.PreferencesStore;
+import org.datazuul.amadeos.audio.service.PlaybackCoordinator;
+import org.datazuul.amadeos.audio.service.engine.AudioChannel;
+import org.datazuul.amadeos.audio.service.engine.AudioEngine;
+import org.datazuul.amadeos.audio.service.metadata.ArtworkService;
+import org.datazuul.amadeos.audio.service.recording.Mp3Tagger;
+import org.datazuul.amadeos.audio.service.recording.StreamRecorder;
+import org.datazuul.amadeos.audio.service.webradio.RadioBrowserClient;
+import org.datazuul.amadeos.audio.service.webradio.RadioPlayback;
+import org.datazuul.amadeos.audio.service.webradio.RadioSession;
+import org.datazuul.amadeos.audio.service.webradio.StationRepository;
+import org.datazuul.amadeos.audio.service.webradio.WebRadioService;
+import org.datazuul.amadeos.audio.ui.playlist.PlaylistPanel;
+import org.datazuul.amadeos.audio.ui.widget.Ticker;
+import org.datazuul.amadeos.commons.swing.EdtExecutor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.time.Clock;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
+
+/** Behaviour of the web radio rack, the station browser and stream recording. Runs on the EDT. */
+public final class WebRadioPresenter implements AudioChannel.Listener {
+    private static final Logger LOG = LoggerFactory.getLogger(WebRadioPresenter.class);
+    private static final int LIMIT = 200;
+
+    private final AudioChannel channel;
+    private final PlaybackCoordinator coordinator;
+    private final WebRadioService radio;
+    private final RadioBrowserClient directory;
+    private final StationRepository favorites;
+    private final ArtworkService artwork;
+    private final PreferencesStore preferences;
+    private final ExecutorService executor;
+    private final EdtExecutor edt;
+    private final WebRadioRack rack;
+    private final StationBrowserView view;
+    private final PlaylistPanel.Header header;
+    private Component parent;
+    private Consumer<String> info = s -> {
+    };
+    private Consumer<String> openOptions = s -> {
+    };
+    private StationBrowserView.Tab tab = StationBrowserView.Tab.FAVORITES;
+    private List<Station> context = List.of();
+    private Station current;
+    private RadioPlayback playback;
+    private StreamRecorder recorder;
+    private String streamTitle;
+    private boolean powered = true;
+    private int request;
+    private int choiceRequest;
+
+    @Inject
+    public WebRadioPresenter(AudioEngine engine, PlaybackCoordinator coordinator, WebRadioService radio,
+                             RadioBrowserClient directory, StationRepository favorites, ArtworkService artwork,
+                             PreferencesStore preferences, ExecutorService executor, EdtExecutor edt) {
+        this.channel = engine.channel(SourceId.WEBRADIO);
+        this.coordinator = coordinator;
+        this.radio = radio;
+        this.directory = directory;
+        this.favorites = favorites;
+        this.artwork = artwork;
+        this.preferences = preferences;
+        this.executor = executor;
+        this.edt = edt;
+        this.rack = new WebRadioRack(this);
+        this.view = new StationBrowserView(this);
+        this.header = new PlaylistPanel.Header("STATIONS", view.tabs);
+        channel.addListener(this);
+    }
+
+    public JComponent rack() {
+        return rack;
+    }
+
+    public JComponent listView() {
+        return view.component;
+    }
+
+    public PlaylistPanel.Header header() {
+        return header;
+    }
+
+    public void start(Component dialogParent, Consumer<String> infoSink, Consumer<String> optionsOpener) {
+        parent = dialogParent;
+        info = infoSink;
+        openOptions = optionsOpener;
+        Ticker.every(250, this::tick);
+        showTab(StationBrowserView.Tab.FAVORITES);
+        showStation(null);
+    }
+
+    public void setActive(boolean active) {
+        rack.setDimmed(!active || !powered);
+    }
+
+    /** True while a recording runs, e.g. to ask before quitting. */
+    public boolean isRecording() {
+        return recorder != null && recorder.isRecording();
+    }
+
+    /** Ends playback and a recording, e.g. on exit. */
+    public void shutdown() {
+        stopRecording(false);
+        request++;
+        channel.stop();
+    }
+
+    // ---- station browser -------------------------------------------------------------------------
+
+    void showTab(StationBrowserView.Tab newTab) {
+        tab = newTab;
+        view.selectTab(newTab);
+        switch (newTab) {
+            case FAVORITES -> {
+                showList(favorites.favorites());
+                view.status.setText(" ");
+            }
+            case SEARCH -> {
+                showList(List.of());
+                view.status.setText("Enter a name, genre or country and press Enter");
+                view.query.requestFocusInWindow();
+            }
+            case GENRES -> loadChoices(() -> directory.topTags(150), (tag, count) -> tag + " (" + count + ")");
+            case COUNTRIES -> loadChoices(directory::countries, (code, count) -> countryName(code) + " (" + count + ")");
+        }
+        updateInfo();
+    }
+
+    void showSearch() {
+        coordinator.select(SourceId.WEBRADIO);
+        showTab(StationBrowserView.Tab.SEARCH);
+    }
+
+    private interface ChoiceSource {
+        Map<String, Integer> load() throws IOException;
+    }
+
+    private void loadChoices(ChoiceSource source, java.util.function.BiFunction<String, Integer, String> label) {
+        showList(List.of());
+        view.choices.clear();
+        view.status.setText("Loading...");
+        int req = ++choiceRequest;
+        StationBrowserView.Tab forTab = tab;
+        executor.execute(() -> {
+            try {
+                Map<String, Integer> items = source.load();
+                edt.execute(() -> {
+                    if (req != choiceRequest || tab != forTab) return;
+                    items.forEach((k, v) -> view.choices.addElement(new StationBrowserView.Choice(k, label.apply(k, v))));
+                    view.status.setText(items.size() + (forTab == StationBrowserView.Tab.GENRES ? " genres" : " countries"));
+                });
+            } catch (IOException e) {
+                edt.execute(() -> view.status.setText("radio-browser.info cannot be reached"));
+            }
+        });
+    }
+
+    void choose(StationBrowserView.Choice choice) {
+        StationBrowserView.Tab forTab = tab;
+        load(() -> forTab == StationBrowserView.Tab.GENRES ? directory.byTag(choice.key(), LIMIT)
+                : directory.byCountry(choice.key(), LIMIT), choice.label());
+    }
+
+    void search(String text) {
+        if (text == null || text.isBlank()) return;
+        if (tab != StationBrowserView.Tab.SEARCH) {
+            tab = StationBrowserView.Tab.SEARCH;
+            view.selectTab(tab);
+        }
+        String q = text.strip();
+        // "jazz" finds names and genres; a two-letter code also searches the country.
+        load(() -> {
+            List<Station> byName = directory.search(q, null, null, LIMIT);
+            List<Station> byTag = directory.search(null, q, null, LIMIT);
+            List<Station> merged = new ArrayList<>(byName);
+            for (Station s : byTag) if (merged.stream().noneMatch(m -> m.sameAs(s))) merged.add(s);
+            if (q.length() == 2) {
+                for (Station s : directory.search(null, null, q, LIMIT)) if (merged.stream().noneMatch(m -> m.sameAs(s))) merged.add(s);
+            }
+            return merged.size() > LIMIT ? merged.subList(0, LIMIT) : merged;
+        }, "\"" + q + "\"");
+    }
+
+    private interface StationSource {
+        List<Station> load() throws IOException;
+    }
+
+    private void load(StationSource source, String what) {
+        view.status.setText("Searching...");
+        int req = ++choiceRequest;
+        executor.execute(() -> {
+            try {
+                List<Station> found = source.load();
+                edt.execute(() -> {
+                    if (req != choiceRequest) return;
+                    showList(found);
+                    view.status.setText(found.size() + " stations for " + what);
+                });
+            } catch (IOException e) {
+                LOG.info("Station search failed: {}", e.toString());
+                edt.execute(() -> view.status.setText("radio-browser.info cannot be reached"));
+            }
+        });
+    }
+
+    private void showList(List<Station> stations) {
+        view.model.set(stations, current);
+        updateInfo();
+    }
+
+    void selectionChanged() {
+        if (channel.state().isActive()) return;
+        Station s = view.selected();
+        if (s != null) showStation(s);
+    }
+
+    void addFavorite() {
+        Station s = view.selected();
+        if (s == null) s = current;
+        if (s == null) return;
+        try {
+            view.status.setText(favorites.add(s) ? s.name() + " added to the favorites" : s.name() + " is already a favorite");
+        } catch (RuntimeException e) {
+            error(e.getMessage());
+        }
+        updateInfo();
+    }
+
+    void removeFavorite() {
+        Station s = view.selected();
+        if (s == null || tab != StationBrowserView.Tab.FAVORITES) return;
+        if (JOptionPane.showConfirmDialog(parent, "Remove " + s.name() + " from the favorites?", "Web Radio",
+                JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+        favorites.remove(s);
+        showList(favorites.favorites());
+    }
+
+    void moveFavorite(int delta) {
+        Station s = view.selected();
+        if (s == null || tab != StationBrowserView.Tab.FAVORITES) return;
+        favorites.move(s, delta);
+        showList(favorites.favorites());
+        int row = view.model.indexOf(s);
+        if (row >= 0) view.table.getSelectionModel().setSelectionInterval(row, row);
+    }
+
+    private void updateInfo() {
+        int n = favorites.favorites().size();
+        info.accept("Web Radio · " + n + (n == 1 ? " favorite" : " favorites"));
+    }
+
+    // ---- transport -------------------------------------------------------------------------------
+
+    void playSelected() {
+        Station s = view.selected();
+        if (s != null) play(s, view.model.stations);
+    }
+
+    void play() {
+        if (!powered) return;
+        if (channel.state().isActive()) return;
+        Station s = view.selected();
+        if (s != null) {
+            play(s, view.model.stations);
+        } else if (current != null) {
+            play(current, context.isEmpty() ? List.of(current) : context);
+        } else if (!favorites.favorites().isEmpty()) {
+            play(favorites.favorites().get(0), favorites.favorites());
+        } else {
+            showSearch();
+        }
+    }
+
+    private void play(Station station, List<Station> list) {
+        if (!powered) return;
+        if (isRecording() && !station.sameAs(current) && !confirmStopRecording()) return;
+        stopRecording(false);
+        coordinator.activate(SourceId.WEBRADIO);
+        context = List.copyOf(list);
+        current = station;
+        streamTitle = null;
+        view.model.setPlaying(station);
+        showStation(station);
+        rack.title.setText("Connecting...");
+        rack.streamInfo.setText(station.streamInfo());
+        channel.stop();
+        int req = ++request;
+        executor.execute(() -> {
+            try {
+                RadioPlayback p = radio.open(station, events(req));
+                edt.execute(() -> {
+                    if (req != request) {
+                        try {
+                            p.close();
+                        } catch (IOException e) {
+                            LOG.debug("Close failed", e);
+                        }
+                        return;
+                    }
+                    playback = p;
+                    rack.streamInfo.setText(p.streamInfo());
+                    if (streamTitle == null) rack.title.setText(" ");
+                    channel.play(p, 0);
+                });
+                directory.click(station);
+            } catch (IOException e) {
+                edt.execute(() -> {
+                    if (req != request) return;
+                    rack.title.setText("No connection");
+                    error("Cannot play " + station.name() + ":\n" + e.getMessage());
+                });
+            }
+        });
+    }
+
+    private RadioSession.Events events(int req) {
+        return new RadioSession.Events() {
+            @Override
+            public void title(String title) {
+                StreamRecorder r = recorder;
+                if (r != null) r.titleChanged(title);
+                edt.execute(() -> {
+                    if (req != request) return;
+                    streamTitle = title;
+                    rack.title.setText(title);
+                    view.cover.setText(current == null ? "" : current.name(), "♪ " + title, stationDetails(current));
+                });
+            }
+
+            @Override
+            public void message(String text) {
+                edt.execute(() -> {
+                    if (req == request) rack.title.setText(text);
+                });
+            }
+
+            @Override
+            public void failed(String reason) {
+                edt.execute(() -> {
+                    if (req == request) rack.title.setText("Connection lost: " + reason);
+                });
+            }
+        };
+    }
+
+    void stop() {
+        if (isRecording() && !confirmStopRecording()) return;
+        stopRecording(true);
+        request++;
+        channel.stop();
+        playback = null;
+        rack.title.setText(" ");
+        rack.buffer.setFill(0);
+        view.model.setPlaying(null);
+    }
+
+    void next() {
+        step(1);
+    }
+
+    void previous() {
+        step(-1);
+    }
+
+    private void step(int delta) {
+        List<Station> list = context.isEmpty() ? view.model.stations : context;
+        if (list.isEmpty()) return;
+        int i = -1;
+        for (int k = 0; k < list.size(); k++) if (list.get(k).sameAs(current)) i = k;
+        int n = Math.floorMod(i + delta, list.size());
+        if (channel.state().isActive()) play(list.get(n), list);
+        else {
+            current = list.get(n);
+            showStation(current);
+        }
+    }
+
+    void power(boolean on) {
+        if (!on) {
+            if (isRecording() && !confirmStopRecording()) {
+                rack.power.setSelected(true);
+                return;
+            }
+            stopRecording(true);
+            request++;
+            channel.stop();
+            coordinator.deactivate(SourceId.WEBRADIO);
+        }
+        powered = on;
+        rack.setControlsEnabled(on);
+        rack.setDimmed(!on || coordinator.active() != SourceId.WEBRADIO);
+    }
+
+    private void showStation(Station station) {
+        if (station == null) {
+            rack.station.setText("WEB RADIO");
+            rack.streamInfo.setText(" ");
+            view.cover.setText("", "", "");
+            view.cover.setImage(null, null);
+            return;
+        }
+        rack.station.setText(station.name());
+        rack.streamInfo.setText(station.streamInfo());
+        view.cover.setText(station.name(), streamTitle == null ? "" : "♪ " + streamTitle, stationDetails(station));
+        view.cover.setImage(null, null);
+        executor.execute(() -> {
+            Optional<Artwork> logo = artwork.forStation(station);
+            edt.execute(() -> {
+                if (station != current && station != view.selected()) return;
+                view.cover.setImage(logo.map(Artwork::data).orElse(null), logo.map(Artwork::source).orElse(null));
+            });
+        });
+    }
+
+    private static String stationDetails(Station s) {
+        if (s == null) return "";
+        return String.join(" · ", List.of(s.country(), s.genre(), s.streamInfo()).stream().filter(x -> !x.isBlank()).toList());
+    }
+
+    // ---- recording -------------------------------------------------------------------------------
+
+    void record(boolean on) {
+        if (on) startRecording();
+        else stopRecording(true);
+    }
+
+    void recordingOptions() {
+        openOptions.accept("Recording");
+    }
+
+    private void startRecording() {
+        RadioPlayback p = playback;
+        if (p == null || channel.state() != TransportState.PLAYING) {
+            rack.record.setSelected(false);
+            message("Start a station first, then press Record.");
+            return;
+        }
+        if (!preferences.current().recordingNoticeShown()) {
+            int answer = JOptionPane.showConfirmDialog(parent, """
+                            Recordings of radio programmes are for your private use only.
+                            Do not pass them on or publish them.
+
+                            Start recording?""", "Record", JOptionPane.OK_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE);
+            if (answer != JOptionPane.OK_OPTION) {
+                rack.record.setSelected(false);
+                return;
+            }
+            preferences.update(prefs -> prefs.withRecordingNoticeShown());
+        }
+        StreamRecorder r = new StreamRecorder(preferences.current().recording(), p.station().name(), p.codec(),
+                Clock.systemDefaultZone(), new Mp3Tagger(), new StreamRecorder.Listener() {
+            @Override
+            public void status(StreamRecorder.Status status) {
+                edt.execute(() -> showRecordingStatus(status));
+            }
+
+            @Override
+            public void stopped(String reason, List<Path> files) {
+                edt.execute(() -> {
+                    p.session().setTap(null);
+                    recorder = null;
+                    rack.record.setSelected(false);
+                    rack.recording.setText(" ");
+                    message(reason + "\n" + saved(files));
+                });
+            }
+        });
+        try {
+            r.start(p.session().lastTitle());
+        } catch (IOException e) {
+            rack.record.setSelected(false);
+            error("Cannot start recording: " + e.getMessage());
+            return;
+        }
+        recorder = r;
+        p.session().setTap(r::write);
+        rack.recording.setText("● REC 00:00");
+    }
+
+    private void stopRecording(boolean report) {
+        StreamRecorder r = recorder;
+        recorder = null;
+        rack.record.setSelected(false);
+        rack.recording.setText(" ");
+        if (r == null) return;
+        RadioPlayback p = playback;
+        if (p != null) p.session().setTap(null);
+        List<Path> files = r.stop();
+        if (report && !files.isEmpty()) message(saved(files));
+    }
+
+    private boolean confirmStopRecording() {
+        return JOptionPane.showConfirmDialog(parent, "A recording is running. Stop it?", "Web Radio",
+                JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION;
+    }
+
+    private void showRecordingStatus(StreamRecorder.Status status) {
+        long s = status.elapsed().toSeconds();
+        String time = s >= 3600 ? String.format("%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60) : String.format("%02d:%02d", s / 60, s % 60);
+        rack.recording.setText(String.format(Locale.ROOT, "● REC %s  %.1f MB", time, status.bytes() / 1_048_576.0));
+    }
+
+    private static String saved(List<Path> files) {
+        if (files.isEmpty()) return "Nothing was recorded.";
+        Path dir = files.get(0).getParent();
+        return files.size() == 1 ? "Saved " + files.get(0) : "Saved " + files.size() + " files in " + dir;
+    }
+
+    // ---- playback events -------------------------------------------------------------------------
+
+    private void tick() {
+        RadioPlayback p = playback;
+        if (p != null && channel.state().isActive()) rack.buffer.setFill(p.session().bufferFill());
+        if (isRecording() && System.currentTimeMillis() / 600 % 2 == 0) {
+            rack.recording.setForeground(new Color(0xFF, 0x4B, 0x3A));
+        } else if (isRecording()) {
+            rack.recording.setForeground(new Color(0x80, 0x26, 0x1D));
+        }
+    }
+
+    @Override
+    public void stateChanged(SourceId source, TransportState state, String message) {
+        edt.execute(() -> {
+            if (state == TransportState.ERROR) {
+                stopRecording(true);
+                rack.title.setText("Error: " + message);
+            }
+            if (state == TransportState.STOPPED && !channel.state().isActive()) {
+                stopRecording(true);
+                rack.meter.setLevels(0, 0);
+                rack.buffer.setFill(0);
+            }
+        });
+    }
+
+    @Override
+    public void finished(SourceId source) {
+        edt.execute(() -> {
+            rack.title.setText("The station ended the stream");
+            view.model.setPlaying(null);
+        });
+    }
+
+    @Override
+    public void levels(SourceId source, AudioLevels levels) {
+        edt.execute(() -> rack.meter.setLevels(levels.left(), levels.right()));
+    }
+
+    private static String countryName(String code) {
+        String name = Locale.of("", code).getDisplayCountry(Locale.ENGLISH);
+        return name.isBlank() || name.equals(code) ? code : name;
+    }
+
+    private void error(String text) {
+        JOptionPane.showMessageDialog(parent, text, "Web Radio", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void message(String text) {
+        JOptionPane.showMessageDialog(parent, text, "Web Radio", JOptionPane.INFORMATION_MESSAGE);
+    }
+}

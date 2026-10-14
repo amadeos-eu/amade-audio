@@ -1,0 +1,175 @@
+package org.datazuul.amadeos.audio.ui.rack.webradio;
+
+import org.datazuul.amadeos.audio.domain.Station;
+import org.datazuul.amadeos.audio.ui.playlist.CoverColumn;
+import org.datazuul.amadeos.audio.ui.playlist.PlayingRenderer;
+import org.datazuul.amadeos.audio.ui.playlist.PlaylistPanel;
+
+import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.List;
+
+/** Stations in the playlist panel: favourites, search, genres and countries, as in dz-radio. */
+public final class StationBrowserView {
+    enum Tab {
+        FAVORITES("Favorites"), SEARCH("Search"), GENRES("Genres"), COUNTRIES("Countries");
+
+        final String label;
+
+        Tab(String label) {
+            this.label = label;
+        }
+    }
+
+    final CoverColumn cover = new CoverColumn();
+    final Model model = new Model();
+    final JTable table = new JTable(model);
+    final DefaultListModel<Choice> choices = new DefaultListModel<>();
+    final JList<Choice> choiceList = new JList<>(choices);
+    final JScrollPane choiceScroll = new JScrollPane(choiceList);
+    final JButton play = new JButton("Play");
+    final JButton add = new JButton("Add to Favorites");
+    final JButton remove = new JButton("Remove");
+    final JButton up = new JButton("Up");
+    final JButton down = new JButton("Down");
+    final JTextField query = new JTextField(24);
+    final JLabel status = new JLabel(" ");
+    final JPanel tabs = new JPanel(new GridLayout(1, Tab.values().length, 2, 0));
+    final java.util.Map<Tab, JToggleButton> tabButtons = new java.util.EnumMap<>(Tab.class);
+    final JPanel component;
+
+    /** An entry of the genre or country list: shown text and the key to look up. */
+    record Choice(String key, String label) {
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
+
+    StationBrowserView(WebRadioPresenter p) {
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        PlayingRenderer.install(table, row -> row == model.playing);
+        PlayingRenderer.widths(table, 52, 0, 70, 0, 64, 70);
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 && table.getSelectedRow() >= 0) p.playSelected();
+            }
+        });
+        table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke("ENTER"), "amade.play");
+        table.getActionMap().put("amade.play", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                p.playSelected();
+            }
+        });
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) p.selectionChanged();
+        });
+        choiceList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        choiceList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && choiceList.getSelectedValue() != null) p.choose(choiceList.getSelectedValue());
+        });
+        choiceScroll.setPreferredSize(new Dimension(200, 10));
+        choiceScroll.setVisible(false);
+        play.addActionListener(e -> p.playSelected());
+        add.addActionListener(e -> p.addFavorite());
+        remove.addActionListener(e -> p.removeFavorite());
+        up.addActionListener(e -> p.moveFavorite(-1));
+        down.addActionListener(e -> p.moveFavorite(1));
+        query.addActionListener(e -> p.search(query.getText()));
+        query.getAccessibleContext().setAccessibleName("Search stations");
+        status.setFont(status.getFont().deriveFont(Font.PLAIN, 12f));
+
+        ButtonGroup group = new ButtonGroup();
+        tabs.setOpaque(false);
+        for (Tab tab : Tab.values()) {
+            JToggleButton b = new JToggleButton(tab.label);
+            b.addActionListener(e -> p.showTab(tab));
+            group.add(b);
+            tabs.add(b);
+            tabButtons.put(tab, b);
+        }
+
+        JPanel lists = new JPanel(new BorderLayout(8, 0));
+        lists.setOpaque(false);
+        lists.add(choiceScroll, BorderLayout.WEST);
+        lists.add(PlaylistPanel.scroll(table), BorderLayout.CENTER);
+        JLabel searchLabel = new JLabel("Search");
+        searchLabel.setLabelFor(query);
+        component = PlaylistPanel.view(cover, lists, PlaylistPanel.buttonRow(
+                new JComponent[]{play, add, remove, up, down, searchLabel, query}, new JComponent[]{status}));
+    }
+
+    void selectTab(Tab tab) {
+        tabButtons.get(tab).setSelected(true);
+        boolean favorites = tab == Tab.FAVORITES;
+        remove.setVisible(favorites);
+        up.setVisible(favorites);
+        down.setVisible(favorites);
+        add.setVisible(!favorites);
+        choiceScroll.setVisible(tab == Tab.GENRES || tab == Tab.COUNTRIES);
+        choiceScroll.getParent().revalidate();
+    }
+
+    Station selected() {
+        int row = table.getSelectedRow();
+        return row < 0 ? null : model.stations.get(table.convertRowIndexToModel(row));
+    }
+
+    /** Stations of the current tab. */
+    static final class Model extends AbstractTableModel {
+        private static final String[] COLUMNS = {"#", "Station", "Country", "Genre", "Codec", "Bitrate"};
+        List<Station> stations = List.of();
+        int playing = -1;
+
+        void set(List<Station> list, Station current) {
+            stations = List.copyOf(list);
+            playing = indexOf(current);
+            fireTableDataChanged();
+        }
+
+        void setPlaying(Station current) {
+            playing = indexOf(current);
+            fireTableDataChanged();
+        }
+
+        int indexOf(Station s) {
+            if (s == null) return -1;
+            for (int i = 0; i < stations.size(); i++) if (stations.get(i).sameAs(s)) return i;
+            return -1;
+        }
+
+        @Override
+        public int getRowCount() {
+            return stations.size();
+        }
+
+        @Override
+        public int getColumnCount() {
+            return COLUMNS.length;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            return COLUMNS[column];
+        }
+
+        @Override
+        public Object getValueAt(int row, int column) {
+            Station s = stations.get(row);
+            return switch (column) {
+                case 0 -> (row == playing ? "▶ " : "") + (row + 1);
+                case 1 -> s.name();
+                case 2 -> s.country();
+                case 3 -> s.genre();
+                case 4 -> s.codec();
+                default -> s.bitrate() > 0 ? s.bitrate() + "k" : "";
+            };
+        }
+    }
+}
