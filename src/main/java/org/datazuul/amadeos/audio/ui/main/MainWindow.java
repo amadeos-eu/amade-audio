@@ -4,6 +4,7 @@ import static org.datazuul.amadeos.audio.i18n.Texts.tr;
 
 import org.datazuul.amadeos.audio.ui.playlist.PlaylistPanel;
 import org.datazuul.amadeos.audio.ui.widget.RackRail;
+import org.datazuul.amadeos.audio.ui.widget.Scale;
 import org.datazuul.amadeos.commons.swing.AmadeUI;
 
 import javax.swing.*;
@@ -16,6 +17,7 @@ import java.util.Map;
  * hidden; the window then shrinks.
  */
 final class MainWindow extends JFrame {
+    /** Width at 100 %. */
     static final int WIDTH = 1240;
     private final Map<String, JComponent[]> racks = new LinkedHashMap<>();
     private final JPanel stack = new JPanel() {
@@ -36,7 +38,7 @@ final class MainWindow extends JFrame {
         java.net.URL icon = getClass().getResource("/icons/amade-audio.png");
         if (icon != null) setIconImage(new ImageIcon(icon).getImage());
         stack.setLayout(new BoxLayout(stack, BoxLayout.Y_AXIS));
-        stack.setBorder(BorderFactory.createEmptyBorder(6, 6, 0, 6));
+        stack.setBorder(Scale.empty(6, 6, 0, 6));
         stack.add(header);
         stack.add(new RackRail(true));
         for (Map.Entry<String, JComponent> e : rackComponents.entrySet()) {
@@ -52,6 +54,7 @@ final class MainWindow extends JFrame {
             if (c instanceof JComponent jc) jc.setAlignmentX(LEFT_ALIGNMENT);
         }
         setContentPane(stack);
+        Scale.fonts(stack);
         header.enableDragging(this);
         relayout();
         setLocationRelativeTo(null);
@@ -77,7 +80,7 @@ final class MainWindow extends JFrame {
         stack.revalidate();
         Dimension pref = stack.getPreferredSize();
         Rectangle screen = usableScreen();
-        setSize(new Dimension(Math.max(WIDTH, pref.width), Math.min(pref.height, screen.height)));
+        setSize(new Dimension(Math.max(Scale.px(WIDTH), pref.width), Math.min(pref.height, screen.height)));
         validate();
         if (location != null) {
             // Keep the bottom on the screen when the window grows.

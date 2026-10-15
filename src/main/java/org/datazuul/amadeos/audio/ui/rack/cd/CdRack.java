@@ -7,6 +7,7 @@ import org.datazuul.amadeos.audio.ui.widget.LcdPanel;
 import org.datazuul.amadeos.audio.ui.widget.Led;
 import org.datazuul.amadeos.audio.ui.widget.DeviceLabel;
 import org.datazuul.amadeos.audio.ui.widget.RackPanel;
+import org.datazuul.amadeos.audio.ui.widget.Scale;
 import org.datazuul.amadeos.audio.ui.widget.SevenSegmentDisplay;
 import org.datazuul.amadeos.audio.ui.widget.TransportIcon;
 import org.datazuul.amadeos.audio.ui.widget.TransportIcon.Kind;
@@ -33,7 +34,7 @@ public final class CdRack extends RackPanel {
     final JButton next;
 
     CdRack(CdPresenter p) {
-        super(new BorderLayout(16, 0));
+        super(new BorderLayout(Scale.px(16), 0));
         setDeviceLabel(tr("plate.cd"), DeviceLabel.Symbol.DISC);
         power.setSelected(true);
         power.addActionListener(e -> p.power(power.isSelected()));
@@ -46,14 +47,14 @@ public final class CdRack extends RackPanel {
         pause = TransportIcon.button(Kind.PAUSE, p::pause);
         next = TransportIcon.button(Kind.NEXT, p::next);
 
-        JPanel info = RackPanel.infoWindow(new BorderLayout(14, 0));
+        JPanel info = RackPanel.infoWindow(new BorderLayout(Scale.px(14), 0));
         JPanel text = new JPanel();
         text.setOpaque(false);
         text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
         album.setFont(album.getFont().deriveFont(Font.BOLD, 16f));
         text.add(Box.createVerticalGlue());
         text.add(source);
-        text.add(Box.createVerticalStrut(3));
+        text.add(Box.createVerticalStrut(Scale.px(3)));
         text.add(album);
         text.add(Box.createVerticalGlue());
         info.add(cover, BorderLayout.WEST);
@@ -67,17 +68,17 @@ public final class CdRack extends RackPanel {
         timeBox.add(LcdPanel.caption(tr("lcd.min-sec")), BorderLayout.SOUTH);
         timeLcd.add(timeBox, BorderLayout.CENTER);
         mode.setVerticalAlignment(SwingConstants.TOP);
-        mode.setPreferredSize(new Dimension(64, 10));
+        mode.setPreferredSize(Scale.size(64, 10));
         timeLcd.add(mode, BorderLayout.EAST);
 
         // Same structure as the other racks: [side buttons | info + LCDs | transport], so the LCDs
         // and the transport bar line up with the player and web radio racks.
-        JPanel lcdRow = new JPanel(new BorderLayout(8, 0));
+        JPanel lcdRow = new JPanel(new BorderLayout(Scale.px(8), 0));
         lcdRow.setOpaque(false);
         lcdRow.add(trackLcd, BorderLayout.WEST);
         lcdRow.add(timeLcd, BorderLayout.CENTER);
 
-        JPanel center = new JPanel(new BorderLayout(14, 0));
+        JPanel center = new JPanel(new BorderLayout(Scale.px(14), 0));
         center.setOpaque(false);
         center.add(info, BorderLayout.CENTER);
         center.add(lcdRow, BorderLayout.EAST);

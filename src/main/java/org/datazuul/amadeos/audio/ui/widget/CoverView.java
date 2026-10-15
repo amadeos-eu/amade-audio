@@ -16,8 +16,9 @@ import java.io.IOException;
 public final class CoverView extends Widget {
     private BufferedImage image;
 
+    /** @param size at 100 %, see {@link Scale} */
     public CoverView(int size) {
-        Dimension d = new Dimension(size, size);
+        Dimension d = Scale.size(size, size);
         setPreferredSize(d);
         setMinimumSize(d);
         setMaximumSize(d);

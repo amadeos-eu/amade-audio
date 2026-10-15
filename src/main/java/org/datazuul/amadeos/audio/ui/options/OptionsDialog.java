@@ -37,6 +37,7 @@ public final class OptionsDialog extends JDialog {
     private final JCheckBox split = new JCheckBox(tr("options.recording.split"));
     private final JSpinner maxMinutes = new JSpinner(new SpinnerNumberModel(120, 0, 24 * 60, 15));
     private final JComboBox<String> lcdColor = new JComboBox<>(LCD_COLORS);
+    private final JComboBox<Integer> size = new JComboBox<>();
     private final JRadioButton proxySystem = new JRadioButton(tr("options.network.system"));
     private final JRadioButton proxyNone = new JRadioButton(tr("options.network.none"));
     private final JRadioButton proxyManual = new JRadioButton(tr("options.network.manual"));
@@ -71,6 +72,16 @@ public final class OptionsDialog extends JDialog {
         lcdColor.setSelectedIndex(Math.max(0, java.util.Arrays.asList(LCD_COLORS).indexOf(prefs.lcdColor())));
         lcdColor.setRenderer(translated("options.lcd."));
         category.setRenderer(translated("options.page."));
+        for (int s : AudioPreferences.SIZES) size.addItem(s);
+        size.setSelectedItem(prefs.size());
+        size.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean selected,
+                                                          boolean focus) {
+                return super.getListCellRendererComponent(list, value == null ? "" : tr("options.display.size.value", value),
+                        index, selected, focus);
+            }
+        });
 
         pages.add(recordingPage(), "Recording");
         pages.add(displayPage(), "Display");
@@ -99,10 +110,15 @@ public final class OptionsDialog extends JDialog {
             RecordingSettings settings = new RecordingSettings(dir, pattern.getText(), split.isSelected(),
                     (Integer) maxMinutes.getValue());
             String color = LCD_COLORS[Math.max(0, lcdColor.getSelectedIndex())];
-            apply.accept(prefs.withRecording(settings).withLcdColor(color).withProxy(proxySettings()),
+            int newSize = (Integer) size.getSelectedItem();
+            apply.accept(prefs.withRecording(settings).withLcdColor(color).withProxy(proxySettings()).withSize(newSize),
                     new String(proxyPassword.getPassword()));
             dispose();
-            applyLanguage(locales);
+            boolean told = applyLanguage(locales);
+            if (newSize != prefs.size() && !told) {
+                JOptionPane.showMessageDialog(getOwner(), tr("options.display.size.restart", tr("app.title")), getTitle(),
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
         });
         cancel.addActionListener(e -> dispose());
         getRootPane().setDefaultButton(ok);
@@ -122,20 +138,20 @@ public final class OptionsDialog extends JDialog {
         setLocationRelativeTo(owner);
     }
 
-    /** Stores the language and says when it takes effect. */
-    private void applyLanguage(LocaleSettings locales) {
-        if (language.selectedLanguage().equals(locales.applicationLanguage())) return;
+    /** Stores the language and says when it takes effect; true if it said so. */
+    private boolean applyLanguage(LocaleSettings locales) {
+        if (language.selectedLanguage().equals(locales.applicationLanguage())) return false;
         try {
             locales.setApplicationLanguage(language.selectedLanguage());
         } catch (IOException e) {
             JOptionPane.showMessageDialog(getOwner(), e.getMessage(), getTitle(), JOptionPane.ERROR_MESSAGE);
-            return;
+            return false;
         }
-        if (locales.restartRequired()) {
-            JOptionPane.showMessageDialog(getOwner(),
-                    Messages.commons(Texts.messages().locale()).format("language.restart", tr("app.title")),
-                    getTitle(), JOptionPane.INFORMATION_MESSAGE);
-        }
+        if (!locales.restartRequired()) return false;
+        JOptionPane.showMessageDialog(getOwner(),
+                Messages.commons(Texts.messages().locale()).format("language.restart", tr("app.title")),
+                getTitle(), JOptionPane.INFORMATION_MESSAGE);
+        return true;
     }
 
     /** Shows ids through the texts {@code prefix + id}. */
@@ -188,8 +204,9 @@ public final class OptionsDialog extends JDialog {
         c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.HORIZONTAL;
         row(form, c, 0, tr("options.display.lcd"), lcdColor);
-        row(form, c, 1, Messages.commons(Texts.messages().locale()).get("language.label").replace("&", ""), language);
-        c.gridy = 2;
+        row(form, c, 1, tr("options.display.size"), size);
+        row(form, c, 2, Messages.commons(Texts.messages().locale()).get("language.label").replace("&", ""), language);
+        c.gridy = 3;
         c.weighty = 1;
         form.add(Box.createVerticalGlue(), c);
         return form;

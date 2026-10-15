@@ -27,11 +27,12 @@ public final class Fader extends JComponent {
     private boolean adjusting;
 
     /**
+     * @param height  at the current {@link Scale}
      * @param centred a tone control: the middle is 0 dB and marked
      */
     public Fader(String name, int height, boolean small, boolean centred) {
-        this.knobWidth = small ? 22 : 34;
-        this.knobHeight = small ? 16 : 22;
+        this.knobWidth = Scale.px(small ? 22 : 34);
+        this.knobHeight = Scale.px(small ? 16 : 22);
         this.centred = centred;
         Dimension size = new Dimension(knobWidth + 4, height);
         setPreferredSize(size);
@@ -158,16 +159,18 @@ public final class Fader extends JComponent {
         g.setColor(t.sunkenBg());
         g.fillRect(cx - slotW / 2, 0, slotW, getHeight());
         g.setColor(new Color(0x10, 0x12, 0x16));
-        g.fillRect(cx - 2, 6, 4, getHeight() - 12);
+        int end = Scale.px(6);
+        int groove = Math.max(2, Scale.px(4));
+        g.fillRect(cx - groove / 2, end, groove, getHeight() - 2 * end);
         g.setColor(t.shadow());
-        g.drawLine(cx - 3, 6, cx - 3, getHeight() - 7);
+        g.drawLine(cx - groove / 2 - 1, end, cx - groove / 2 - 1, getHeight() - end - 1);
         if (centred) {
             g.setColor(t.darkShadow());
             g.drawLine(cx - slotW / 2, getHeight() / 2, cx + slotW / 2 - 1, getHeight() / 2);
         }
         if (!isEnabled()) {
             g.setColor(t.shadow());
-            g.drawLine(cx - 3, 6, cx - 3, getHeight() - 7);
+            g.drawLine(cx - groove / 2 - 1, end, cx - groove / 2 - 1, getHeight() - end - 1);
             return; // no knob: nothing to control
         }
         // Knob.
@@ -179,10 +182,12 @@ public final class Fader extends JComponent {
         g.fillRect(x + 2, y + 2, knobWidth - 4, knobHeight - 4);
         AmadeUI.paintBevel(g, x, y, knobWidth, knobHeight, true, 2);
         g.setColor(t.shadow());
-        int ridges = knobHeight >= 20 ? 3 : 1;
+        int ridges = knobHeight >= Scale.px(20) ? 3 : 1;
+        int pitch = knobHeight >= 20 ? 4 : 3;
+        int edge = Math.max(3, Scale.px(5));
         for (int i = 0; i < ridges; i++) {
-            int ry = y + knobHeight / 2 - (ridges - 1) * 2 + i * 4;
-            g.drawLine(x + 5, ry, x + knobWidth - 6, ry);
+            int ry = y + knobHeight / 2 - (ridges - 1) * pitch / 2 + i * pitch;
+            g.drawLine(x + edge, ry, x + knobWidth - edge - 1, ry);
         }
         if (isFocusOwner()) {
             g.setColor(t.textActive());

@@ -15,7 +15,7 @@ public class LcdPanel extends JPanel {
     public LcdPanel(LayoutManager layout) {
         super(layout);
         setOpaque(true);
-        setBorder(BorderFactory.createCompoundBorder(AmadeUI.sunken(), BorderFactory.createEmptyBorder(4, 10, 4, 10)));
+        setBorder(BorderFactory.createCompoundBorder(AmadeUI.sunken(), Scale.empty(4, 10, 4, 10)));
     }
 
     public void setDimmed(boolean value) {

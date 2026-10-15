@@ -14,12 +14,13 @@ public final class SevenSegmentDisplay extends Widget {
     private String text;
 
     /**
-     * @param pattern text whose length fixes the width, e.g. {@code 88:88}
+     * @param pattern     text whose length fixes the width, e.g. {@code 88:88}
+     * @param digitHeight at 100 %, see {@link Scale}
      */
     public SevenSegmentDisplay(String pattern, int digitHeight) {
-        this.digitHeight = digitHeight;
+        this.digitHeight = Scale.px(digitHeight);
         this.text = pattern.replaceAll("[0-9]", " ");
-        Dimension size = new Dimension(width(pattern) + 4, digitHeight + 4);
+        Dimension size = new Dimension(width(pattern) + 4, this.digitHeight + 4);
         setPreferredSize(size);
         setMinimumSize(size);
         setOpaque(false);
@@ -59,7 +60,7 @@ public final class SevenSegmentDisplay extends Widget {
         for (char c : text.toCharArray()) {
             if (c == ':' || c == '.') {
                 int w = Math.round(digitHeight * 0.28f);
-                int dot = Math.max(3, digitHeight / 9);
+                int dot = Math.max(2, digitHeight / 9);
                 g2.setColor(on);
                 if (c == ':') {
                     g2.fillRect(x + (w - dot) / 2, y + digitHeight / 3 - dot / 2, dot, dot);
@@ -80,7 +81,7 @@ public final class SevenSegmentDisplay extends Widget {
     private void paintDigit(Graphics2D g2, int x, int y, int mask, Color on, Color off) {
         float w = digitWidth();
         float h = digitHeight;
-        float t = Math.max(2f, h * 0.11f);
+        float t = Math.max(1.6f, h * 0.11f);
         float gap = Math.max(1f, t * 0.25f);
         float half = h / 2f;
         RoundRectangle2D[] seg = {

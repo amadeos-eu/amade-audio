@@ -6,6 +6,7 @@ import org.datazuul.amadeos.audio.ui.widget.LcdPanel;
 import org.datazuul.amadeos.audio.ui.widget.Led;
 import org.datazuul.amadeos.audio.ui.widget.DeviceLabel;
 import org.datazuul.amadeos.audio.ui.widget.RackPanel;
+import org.datazuul.amadeos.audio.ui.widget.Scale;
 import org.datazuul.amadeos.audio.ui.widget.SeekBar;
 import org.datazuul.amadeos.audio.ui.widget.SevenSegmentDisplay;
 import org.datazuul.amadeos.audio.ui.widget.SpectrumMeter;
@@ -31,7 +32,7 @@ public final class PlayerRack extends RackPanel {
     final SevenSegmentDisplay number = new SevenSegmentDisplay("88", 40);
     final SpectrumMeter spectrum = new SpectrumMeter();
     final SevenSegmentDisplay time = new SevenSegmentDisplay("88:88", 44);
-    final LcdPanel lcd = new LcdPanel(new BorderLayout(14, 0));
+    final LcdPanel lcd = new LcdPanel(new BorderLayout(Scale.px(14), 0));
     final JButton previous;
     final JButton stop;
     final JButton play;
@@ -39,7 +40,7 @@ public final class PlayerRack extends RackPanel {
     final JButton next;
 
     PlayerRack(PlayerPresenter p) {
-        super(new BorderLayout(16, 0));
+        super(new BorderLayout(Scale.px(16), 0));
         setDeviceLabel(tr("plate.player"), DeviceLabel.Symbol.FILES);
         power.setSelected(true);
         power.addActionListener(e -> p.power(power.isSelected()));
@@ -51,9 +52,9 @@ public final class PlayerRack extends RackPanel {
         next = TransportIcon.button(Kind.NEXT, p::next);
         seek.onSeek(p::seek);
 
-        JPanel info = RackPanel.infoWindow(new BorderLayout(0, 4));
+        JPanel info = RackPanel.infoWindow(new BorderLayout(0, Scale.px(4)));
         file.setFont(file.getFont().deriveFont(Font.BOLD, 15f));
-        JPanel badgeRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0)) {
+        JPanel badgeRow = new JPanel(new FlowLayout(FlowLayout.LEFT, Scale.px(3), 0)) {
             @Override
             public Dimension getMaximumSize() {
                 return getPreferredSize();
@@ -72,14 +73,16 @@ public final class PlayerRack extends RackPanel {
         for (JComponent c : new JComponent[]{folder, file, badgeRow}) {
             c.setAlignmentX(LEFT_ALIGNMENT);
             text.add(c);
-            text.add(Box.createVerticalStrut(3));
+            text.add(Box.createVerticalStrut(Scale.px(3)));
         }
         info.add(text, BorderLayout.CENTER);
-        JPanel left = new JPanel(new BorderLayout(0, 8)) {
-            /** Fixed width, height from the content. */
+        JPanel left = new JPanel(new BorderLayout(0, Scale.px(8))) {
+            /** Fixed width, height from the content; wide enough for the format badges. */
             @Override
             public Dimension getPreferredSize() {
-                return new Dimension(260, super.getPreferredSize().height);
+                Insets in = info.getInsets();
+                int badges = badgeRow.getPreferredSize().width + in.left + in.right;
+                return new Dimension(Math.max(Scale.px(260), badges), super.getPreferredSize().height);
             }
         };
         left.setOpaque(false);
@@ -98,7 +101,7 @@ public final class PlayerRack extends RackPanel {
         lcd.add(spectrum, BorderLayout.CENTER);
         lcd.add(timeBox, BorderLayout.EAST);
 
-        JPanel center = new JPanel(new BorderLayout(14, 0));
+        JPanel center = new JPanel(new BorderLayout(Scale.px(14), 0));
         center.setOpaque(false);
         center.add(left, BorderLayout.WEST);
         center.add(lcd, BorderLayout.CENTER);
@@ -148,7 +151,7 @@ public final class PlayerRack extends RackPanel {
             }
         };
         label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 10));
-        label.setBorder(BorderFactory.createEmptyBorder(1, 4, 1, 4));
+        label.setBorder(BorderFactory.createEmptyBorder(1, Math.max(2, Scale.px(4)), 1, Math.max(2, Scale.px(4))));
         return label;
     }
 }

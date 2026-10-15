@@ -12,7 +12,7 @@ public final class RackRail extends Widget {
 
     public RackRail(boolean handles) {
         this.handles = handles;
-        setPreferredSize(new Dimension(100, handles ? 12 : 6));
+        setPreferredSize(new Dimension(100, Scale.px(handles ? 12 : 6)));
         setMinimumSize(getPreferredSize());
         setMaximumSize(new Dimension(Short.MAX_VALUE, getPreferredSize().height));
     }
@@ -29,14 +29,17 @@ public final class RackRail extends Widget {
         g.setColor(frame(t));
         g.fillRect(0, 0, getWidth(), getHeight());
         if (!handles) return;
-        int y = getHeight() / 2 - 2;
-        for (int x : new int[]{88, getWidth() - 88 - 56}) {
+        int w = Scale.px(56);
+        int inset = Scale.px(88);
+        int body = Math.max(1, Scale.px(3));
+        int y = getHeight() / 2 - body / 2 - 1;
+        for (int x : new int[]{inset, getWidth() - inset - w}) {
             g.setColor(t.highlight());
-            g.fillRect(x, y, 56, 1);
+            g.fillRect(x, y, w, 1);
             g.setColor(t.base());
-            g.fillRect(x, y + 1, 56, 3);
+            g.fillRect(x, y + 1, w, body);
             g.setColor(t.shadow());
-            g.fillRect(x, y + 4, 56, 1);
+            g.fillRect(x, y + 1 + body, w, 1);
         }
     }
 

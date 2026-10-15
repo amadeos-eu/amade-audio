@@ -23,9 +23,12 @@ public final class DotMatrixDisplay extends Widget {
     private int offset;
     private int pause;
 
-    /** @param dot size of one dot in pixels, including the gap */
+    /**
+     * @param dot size of one dot in pixels at 100 %, including the gap; never below 2, so the dots stay
+     *            apart and the letters readable
+     */
     public DotMatrixDisplay(int dot, int columns) {
-        this.dot = dot;
+        this.dot = Math.max(2, Scale.px(dot));
         Dimension size = new Dimension(columns * dot, 9 * dot);
         setPreferredSize(size);
         setMinimumSize(new Dimension(10 * dot, 9 * dot));

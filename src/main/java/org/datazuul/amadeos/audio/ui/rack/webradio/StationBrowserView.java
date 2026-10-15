@@ -6,6 +6,7 @@ import org.datazuul.amadeos.audio.domain.Station;
 import org.datazuul.amadeos.audio.ui.playlist.CoverColumn;
 import org.datazuul.amadeos.audio.ui.playlist.PlayingRenderer;
 import org.datazuul.amadeos.audio.ui.playlist.PlaylistPanel;
+import org.datazuul.amadeos.audio.ui.widget.Scale;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -151,7 +152,7 @@ public final class StationBrowserView {
             tabButtons.put(tab, b);
         }
 
-        JPanel lists = new JPanel(new BorderLayout(8, 0));
+        JPanel lists = new JPanel(new BorderLayout(Scale.px(8), 0));
         lists.setOpaque(false);
         lists.add(choiceScroll, BorderLayout.WEST);
         lists.add(PlaylistPanel.scroll(table), BorderLayout.CENTER);

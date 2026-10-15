@@ -13,7 +13,7 @@ public final class SpectrumMeter extends Widget {
     private final float[] bands = new float[AudioLevels.BANDS];
 
     public SpectrumMeter() {
-        setPreferredSize(new Dimension(280, 74));
+        setPreferredSize(Scale.size(280, 74));
         setOpaque(false);
         getAccessibleContext().setAccessibleName(tr("widget.spectrum"));
     }
@@ -35,19 +35,19 @@ public final class SpectrumMeter extends Widget {
     protected void paintComponent(Graphics g) {
         Color glow = LcdPanel.colorFor(this);
         Color ghost = LcdPalette.ghost(LcdPalette.glow());
-        g.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
+        g.setFont(Scale.font(Font.MONOSPACED, Font.PLAIN, 11));
         FontMetrics fm = g.getFontMetrics();
         int labelH = fm.getHeight();
         int h = getHeight() - labelH - 2;
         int colW = getWidth() / bands.length;
-        int segH = 3;
-        int pitch = 5;
+        int pitch = Math.max(3, Scale.px(5));
+        int segH = pitch - Math.max(1, Scale.px(2));
         int rows = Math.max(1, h / pitch);
         for (int b = 0; b < bands.length; b++) {
             int lit = Math.round(bands[b] * rows);
             for (int r = 0; r < rows; r++) {
                 g.setColor(r < lit ? glow : ghost);
-                g.fillRect(b * colW + 1, h - (r + 1) * pitch + (pitch - segH), colW - 3, segH);
+                g.fillRect(b * colW + 1, h - (r + 1) * pitch + (pitch - segH), colW - Math.max(2, Scale.px(3)), segH);
             }
         }
         g.setColor(glow);

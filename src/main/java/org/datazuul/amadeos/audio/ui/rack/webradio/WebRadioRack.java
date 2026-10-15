@@ -9,6 +9,7 @@ import org.datazuul.amadeos.audio.ui.widget.Led;
 import org.datazuul.amadeos.audio.ui.widget.LevelMeter;
 import org.datazuul.amadeos.audio.ui.widget.DeviceLabel;
 import org.datazuul.amadeos.audio.ui.widget.RackPanel;
+import org.datazuul.amadeos.audio.ui.widget.Scale;
 import org.datazuul.amadeos.audio.ui.widget.Widget;
 import org.datazuul.amadeos.audio.ui.widget.TransportIcon;
 import org.datazuul.amadeos.audio.ui.widget.TransportIcon.Kind;
@@ -26,7 +27,7 @@ public final class WebRadioRack extends RackPanel {
     final JLabel recording = new JLabel(" ");
     final LevelMeter meter = new LevelMeter();
     final BufferBar buffer = new BufferBar();
-    final LcdPanel lcd = new LcdPanel(new BorderLayout(20, 0));
+    final LcdPanel lcd = new LcdPanel(new BorderLayout(Scale.px(20), 0));
     final JButton previous;
     final JButton stop;
     final JButton play;
@@ -34,7 +35,7 @@ public final class WebRadioRack extends RackPanel {
     final JButton next;
 
     WebRadioRack(WebRadioPresenter p) {
-        super(new BorderLayout(16, 0));
+        super(new BorderLayout(Scale.px(16), 0));
         setDeviceLabel(tr("plate.radio"), DeviceLabel.Symbol.RADIO);
         power.setSelected(true);
         power.addActionListener(e -> p.power(power.isSelected()));
@@ -56,21 +57,21 @@ public final class WebRadioRack extends RackPanel {
         station.setText(tr("radio.lcd.idle"));
         recording.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12));
         recording.setForeground(LcdPalette.PEAK);
-        JPanel top = new JPanel(new BorderLayout(12, 0));
+        JPanel top = new JPanel(new BorderLayout(Scale.px(12), 0));
         top.setOpaque(false);
         top.add(station, BorderLayout.CENTER);
         top.add(streamInfo, BorderLayout.EAST);
-        JPanel bottom = new JPanel(new BorderLayout(12, 0));
+        JPanel bottom = new JPanel(new BorderLayout(Scale.px(12), 0));
         bottom.setOpaque(false);
         bottom.add(title, BorderLayout.CENTER);
         bottom.add(recording, BorderLayout.EAST);
-        JPanel text = new JPanel(new GridLayout(2, 1, 0, 4));
+        JPanel text = new JPanel(new GridLayout(2, 1, 0, Scale.px(4)));
         text.setOpaque(false);
         text.add(top);
         text.add(bottom);
-        JPanel meters = new JPanel(new BorderLayout(0, 4));
+        JPanel meters = new JPanel(new BorderLayout(0, Scale.px(4)));
         meters.setOpaque(false);
-        meters.setPreferredSize(new Dimension(260, 50));
+        meters.setPreferredSize(Scale.size(260, 50));
         meters.add(meter, BorderLayout.CENTER);
         meters.add(buffer, BorderLayout.SOUTH);
         lcd.add(text, BorderLayout.CENTER);
@@ -98,7 +99,7 @@ public final class WebRadioRack extends RackPanel {
         private double fill;
 
         BufferBar() {
-            setPreferredSize(new Dimension(300, 12));
+            setPreferredSize(Scale.size(300, 12));
             getAccessibleContext().setAccessibleName(tr("radio.buffer"));
         }
 
@@ -113,12 +114,15 @@ public final class WebRadioRack extends RackPanel {
         protected void paintComponent(Graphics g) {
             Color c = LcdPanel.colorFor(this);
             g.setColor(c);
-            g.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
-            g.drawString(tr("radio.buffer.short"), 0, getHeight() - 2);
-            int x = 30;
+            g.setFont(Scale.font(Font.MONOSPACED, Font.PLAIN, 11));
+            FontMetrics fm = g.getFontMetrics();
+            String label = tr("radio.buffer.short");
+            g.drawString(label, 0, (getHeight() + fm.getAscent()) / 2 - 1);
+            int x = Math.max(Scale.px(30), fm.stringWidth(label) + Scale.px(6));
             int w = getWidth() - x - 1;
-            g.drawRect(x, 3, w, getHeight() - 6);
-            g.fillRect(x + 2, 5, (int) Math.round((w - 3) * fill), getHeight() - 9);
+            int pad = Math.max(1, Scale.px(3));
+            g.drawRect(x, pad, w, getHeight() - 2 * pad);
+            g.fillRect(x + 2, pad + 2, (int) Math.round((w - 3) * fill), Math.max(1, getHeight() - 2 * pad - 3));
         }
     }
 }

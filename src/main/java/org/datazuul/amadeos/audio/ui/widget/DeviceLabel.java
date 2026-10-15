@@ -14,6 +14,7 @@ import java.awt.geom.Path2D;
 public final class DeviceLabel {
     public enum Symbol { MIXER, DISC, FILES, RADIO }
 
+    /** At 100 %. */
     static final int PLATE_WIDTH = 24;
 
     private final String name;
@@ -27,7 +28,7 @@ public final class DeviceLabel {
 
     /** Extra space the plate needs inside the rack, at the left. */
     Insets space() {
-        return new Insets(0, PLATE_WIDTH + 10, 0, 0);
+        return new Insets(0, plateWidth() + Scale.px(10), 0, 0);
     }
 
     /** Paints into the rack's content area {@code (x, y, w, h)} (inside the bevel and padding). */
@@ -35,32 +36,39 @@ public final class DeviceLabel {
         DesktopTheme t = AmadeUI.theme();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        Font font = new Font(Font.SANS_SERIF, Font.BOLD, 11);
-        int x = area.x - PLATE_WIDTH - 10;
-        int y = area.y - 4;
-        int h = area.height + 8;
+        Font font = Scale.font(Font.SANS_SERIF, Font.BOLD, 11);
+        int plate = plateWidth();
+        int x = area.x - plate - Scale.px(10);
+        int y = area.y - Scale.px(4);
+        int h = area.height + Scale.px(8);
+        int symbol = Math.max(9, Scale.px(14));
         g.setColor(t.sunkenBg());
-        g.fillRect(x, y, PLATE_WIDTH, h);
-        AmadeUI.paintBevel(g, x, y, PLATE_WIDTH, h, false, 1);
-        paintSymbol(g, x + (PLATE_WIDTH - 14) / 2, y + 6, 14, accent(t));
+        g.fillRect(x, y, plate, h);
+        AmadeUI.paintBevel(g, x, y, plate, h, false, 1);
+        paintSymbol(g, x + (plate - symbol) / 2, y + Scale.px(6), symbol, accent(t));
         // Text reading upwards, from the bottom of the plate.
-        int available = h - 32;
+        int available = h - symbol - Scale.px(18);
         Font spaced = font.deriveFont(java.util.Map.of(java.awt.font.TextAttribute.TRACKING, 0.12));
         g.setFont(spaced);
         FontMetrics fm = g.getFontMetrics();
         int textW = fm.stringWidth(name);
         // Translated names can be longer than the plate: shrink the letters until they fit.
-        for (float size = 10; textW > available && size >= 7; size--) {
+        for (float size = font.getSize2D() - 1; textW > available && size >= 7; size--) {
             g.setFont(spaced.deriveFont(size));
             fm = g.getFontMetrics();
             textW = fm.stringWidth(name);
         }
-        int tx = x + PLATE_WIDTH / 2 + fm.getAscent() / 2 - 1;
-        int ty = y + h - 6 - Math.max(0, (available - textW) / 2);
+        int tx = x + plate / 2 + fm.getAscent() / 2 - 1;
+        int ty = y + h - Scale.px(6) - Math.max(0, (available - textW) / 2);
         AffineTransform old = g.getTransform();
         g.rotate(-Math.PI / 2, tx, ty);
         engrave(g, name, tx, ty, t);
         g.setTransform(old);
+    }
+
+    /** The plate is as wide as the text is high, at least {@code PLATE_WIDTH} at 100 %. */
+    private static int plateWidth() {
+        return Math.max(Scale.px(PLATE_WIDTH), Math.round(Scale.text(11)) + 6);
     }
 
     /** Text pressed into the plate: light edge below right, dark letters. */
