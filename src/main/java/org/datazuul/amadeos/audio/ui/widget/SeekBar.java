@@ -21,7 +21,7 @@ public final class SeekBar extends Widget {
     };
 
     public SeekBar() {
-        setPreferredSize(new Dimension(280, 18));
+        setPreferredSize(Scale.size(280, 18));
         setFocusable(true);
         getAccessibleContext().setAccessibleName(tr("widget.position"));
         MouseAdapter mouse = new MouseAdapter() {
@@ -46,7 +46,8 @@ public final class SeekBar extends Widget {
             }
 
             private void move(int x) {
-                position = Math.max(0, Math.min(1, (x - 6) / (double) Math.max(1, getWidth() - 12)));
+                int half = knob() / 2;
+                position = Math.max(0, Math.min(1, (x - half) / (double) Math.max(1, getWidth() - 2 * half)));
                 repaint();
             }
         };
@@ -83,21 +84,27 @@ public final class SeekBar extends Widget {
     @Override
     protected void paintComponent(Graphics g) {
         DesktopTheme t = AmadeUI.theme();
-        int trackY = getHeight() / 2 - 4;
+        int trackH = Math.max(5, Scale.px(8));
+        int trackY = (getHeight() - trackH) / 2;
+        int half = knob() / 2;
         g.setColor(new Color(0x10, 0x12, 0x16));
-        g.fillRect(0, trackY, getWidth(), 8);
-        AmadeUI.paintBevel(g, 0, trackY, getWidth(), 8, false, 1);
-        int x = 6 + (int) Math.round(position * (getWidth() - 12));
+        g.fillRect(0, trackY, getWidth(), trackH);
+        AmadeUI.paintBevel(g, 0, trackY, getWidth(), trackH, false, 1);
+        int x = half + (int) Math.round(position * (getWidth() - 2 * half));
         g.setColor(t.shadow());
-        g.fillRect(1, trackY + 1, Math.max(0, x - 1), 6);
+        g.fillRect(1, trackY + 1, Math.max(0, x - 1), trackH - 2);
         if (!isEnabled()) return;
         g.setColor(t.base());
-        g.fillRect(x - 6, 0, 12, getHeight());
-        AmadeUI.paintBevel(g, x - 6, 0, 12, getHeight(), true, 2);
+        g.fillRect(x - half, 0, 2 * half, getHeight());
+        AmadeUI.paintBevel(g, x - half, 0, 2 * half, getHeight(), true, Scale.factor() < 0.8f ? 1 : 2);
         if (isFocusOwner()) {
             g.setColor(t.textActive());
-            g.drawRect(x - 7, 0, 13, getHeight() - 1);
+            g.drawRect(x - half - 1, 0, 2 * half + 1, getHeight() - 1);
         }
+    }
+
+    private static int knob() {
+        return Math.max(8, Scale.px(12));
     }
 
     @Override

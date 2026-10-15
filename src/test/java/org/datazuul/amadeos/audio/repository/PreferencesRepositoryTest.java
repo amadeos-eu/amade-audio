@@ -24,6 +24,7 @@ class PreferencesRepositoryTest {
         assertEquals("theme", p.lcdColor());
         assertFalse(p.recordingNoticeShown());
         assertEquals(ProxySettings.Mode.SYSTEM, p.proxy().mode());
+        assertEquals(60, p.size());
     }
 
     @Test
@@ -37,7 +38,8 @@ class PreferencesRepositoryTest {
                 .withLcdColor("amber")
                 .withRecordingNoticeShown()
                 .withLastFolder(dir.resolve("music"))
-                .withProxy(new ProxySettings(ProxySettings.Mode.MANUAL, "proxy.example", 8080, "ralf", "localhost, .lan"));
+                .withProxy(new ProxySettings(ProxySettings.Mode.MANUAL, "proxy.example", 8080, "ralf", "localhost, .lan"))
+                .withSize(80);
         repo.save(p);
         AudioPreferences loaded = repo.load();
         assertEquals(0.25f, loaded.volume(SourceId.WEBRADIO), 0.001f);
@@ -49,5 +51,13 @@ class PreferencesRepositoryTest {
         assertTrue(loaded.recordingNoticeShown());
         assertEquals(dir.resolve("music"), loaded.lastFolder());
         assertEquals(p.proxy(), loaded.proxy());
+        assertEquals(80, loaded.size());
+    }
+
+    @Test
+    void sizeIsOneOfTheOfferedOnes() {
+        assertEquals(100, AudioPreferences.defaults(dir).withSize(140).size());
+        assertEquals(80, AudioPreferences.defaults(dir).withSize(75).size());
+        assertEquals(60, AudioPreferences.defaults(dir).withSize(0).size());
     }
 }

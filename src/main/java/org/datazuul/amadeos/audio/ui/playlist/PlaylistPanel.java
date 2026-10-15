@@ -3,6 +3,7 @@ package org.datazuul.amadeos.audio.ui.playlist;
 import org.datazuul.amadeos.audio.domain.SourceId;
 import org.datazuul.amadeos.audio.ui.widget.Led;
 import org.datazuul.amadeos.audio.ui.widget.RackPanel;
+import org.datazuul.amadeos.audio.ui.widget.Scale;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,14 +15,14 @@ import java.util.Map;
  * track list or the radio stations. Each device's view brings its own header text and tabs.
  */
 public final class PlaylistPanel extends RackPanel {
-    /** Height of the panel when shown. */
+    /** Height of the panel when shown, at 100 %. The list keeps its text size, so it does not shrink as far. */
     public static final int HEIGHT = 360;
 
     private final CardLayout cards = new CardLayout();
     private final JPanel content = new JPanel(cards);
     private final JLabel title = new JLabel();
     private final JLabel info = RackPanel.subLabel(" ");
-    private final JPanel tabs = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
+    private final JPanel tabs = new JPanel(new FlowLayout(FlowLayout.RIGHT, Scale.px(2), 0));
     private final Map<SourceId, Header> headers = new EnumMap<>(SourceId.class);
     private SourceId shown;
 
@@ -38,12 +39,12 @@ public final class PlaylistPanel extends RackPanel {
     }
 
     public PlaylistPanel() {
-        super(new BorderLayout(0, 8));
+        super(new BorderLayout(0, Scale.px(8)));
         title.setIcon(new Led(Led.GREEN, () -> true));
-        title.setIconTextGap(12);
+        title.setIconTextGap(Scale.px(12));
         title.setFont(title.getFont().deriveFont(Font.BOLD, 15f));
         info.setFont(info.getFont().deriveFont(12f));
-        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 0));
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, Scale.px(14), 0));
         left.setOpaque(false);
         left.add(title);
         left.add(info);
@@ -55,12 +56,12 @@ public final class PlaylistPanel extends RackPanel {
         content.setOpaque(false);
         add(header, BorderLayout.NORTH);
         add(content, BorderLayout.CENTER);
-        setPreferredSize(new Dimension(100, HEIGHT));
+        setPreferredSize(new Dimension(100, Math.max(260, Scale.px(HEIGHT))));
     }
 
     @Override
     public Dimension getMinimumSize() {
-        return new Dimension(100, 180);
+        return new Dimension(100, Math.max(160, Scale.px(180)));
     }
 
     @Override
@@ -102,11 +103,11 @@ public final class PlaylistPanel extends RackPanel {
 
     /** A view: cover column, list, and a row of buttons below. */
     public static JPanel view(CoverColumn cover, JComponent list, JComponent buttons) {
-        JPanel center = new JPanel(new BorderLayout(14, 0));
+        JPanel center = new JPanel(new BorderLayout(Scale.px(14), 0));
         center.setOpaque(false);
         center.add(cover, BorderLayout.WEST);
         center.add(list, BorderLayout.CENTER);
-        JPanel view = new JPanel(new BorderLayout(0, 8));
+        JPanel view = new JPanel(new BorderLayout(0, Scale.px(8)));
         view.setOpaque(false);
         view.add(center, BorderLayout.CENTER);
         if (buttons != null) view.add(buttons, BorderLayout.SOUTH);
@@ -117,10 +118,10 @@ public final class PlaylistPanel extends RackPanel {
     public static JPanel buttonRow(JComponent[] left, JComponent[] right) {
         JPanel row = new JPanel(new BorderLayout());
         row.setOpaque(false);
-        JPanel l = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel l = new JPanel(new FlowLayout(FlowLayout.LEFT, Scale.px(8), 0));
         l.setOpaque(false);
         for (JComponent c : left) l.add(c);
-        JPanel r = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        JPanel r = new JPanel(new FlowLayout(FlowLayout.RIGHT, Scale.px(8), 0));
         r.setOpaque(false);
         for (JComponent c : right) r.add(c);
         row.add(l, BorderLayout.WEST);

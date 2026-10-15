@@ -9,12 +9,11 @@ import java.awt.*;
 
 /** The front plate of a rack: theme colour with a raised bevel. */
 public class RackPanel extends JPanel {
-    private static final Insets PADDING = new Insets(10, 14, 10, 14);
     private DeviceLabel label;
     public RackPanel(LayoutManager layout) {
         super(layout);
         setOpaque(true);
-        setBorder(BorderFactory.createCompoundBorder(AmadeUI.raised(), BorderFactory.createEmptyBorder(10, 14, 10, 14)));
+        setBorder(BorderFactory.createCompoundBorder(AmadeUI.raised(), Scale.empty(10, 14, 10, 14)));
     }
 
     /** Racks keep their height; only the playlist panel shrinks on small screens. */
@@ -33,7 +32,7 @@ public class RackPanel extends JPanel {
         label = new DeviceLabel(name, symbol);
         Insets extra = label.space();
         setBorder(BorderFactory.createCompoundBorder(AmadeUI.raised(), BorderFactory.createEmptyBorder(
-                PADDING.top + extra.top, PADDING.left + extra.left, PADDING.bottom, PADDING.right)));
+                Scale.px(10) + extra.top, Scale.px(14) + extra.left, Scale.px(10), Scale.px(14))));
     }
 
     @Override
@@ -50,10 +49,10 @@ public class RackPanel extends JPanel {
 
     /** A vertical column of side buttons (Power, Eject, ...), all the same width. */
     public static JPanel sideButtons(AbstractButton... buttons) {
-        JPanel column = new JPanel(new GridLayout(buttons.length, 1, 0, 8));
+        JPanel column = new JPanel(new GridLayout(buttons.length, 1, 0, Scale.px(8)));
         column.setOpaque(false);
         for (AbstractButton b : buttons) {
-            b.setPreferredSize(new Dimension(sideWidth(b), 32));
+            b.setPreferredSize(new Dimension(sideWidth(b), Scale.px(32)));
             column.add(b);
         }
         JPanel wrap = new JPanel(new GridBagLayout());
@@ -65,13 +64,15 @@ public class RackPanel extends JPanel {
     /** Texts of all side buttons; every rack uses the width of the longest, so the racks stay aligned. */
     private static final String[] SIDE_TEXTS = {"rack.power", "cd.eject", "player.open", "radio.stations", "mixer.mute"};
 
-    /** At least 100 pixels, wider when a translation needs it. */
+    /** At least 100 pixels (at 100 %), wider when a translation needs it. */
     static int sideWidth(AbstractButton sample) {
-        FontMetrics fm = sample.getFontMetrics(sample.getFont());
+        // The fonts are scaled once the rack is in the window, so measure with the scaled font already.
+        Font font = sample.getFont();
+        FontMetrics fm = sample.getFontMetrics(font.deriveFont(Scale.text(font.getSize2D())));
         Insets in = sample.getInsets();
-        int width = 100;
+        int width = Scale.px(100);
         for (String key : SIDE_TEXTS) {
-            width = Math.max(width, fm.stringWidth(tr(key)) + 16 + sample.getIconTextGap() + in.left + in.right + 8);
+            width = Math.max(width, fm.stringWidth(tr(key)) + Scale.px(16) + sample.getIconTextGap() + in.left + in.right + Scale.px(8));
         }
         return width;
     }
@@ -86,7 +87,7 @@ public class RackPanel extends JPanel {
             }
         };
         panel.setOpaque(true);
-        panel.setBorder(BorderFactory.createCompoundBorder(AmadeUI.sunken(), BorderFactory.createEmptyBorder(6, 12, 6, 12)));
+        panel.setBorder(BorderFactory.createCompoundBorder(AmadeUI.sunken(), Scale.empty(6, 12, 6, 12)));
         return panel;
     }
 

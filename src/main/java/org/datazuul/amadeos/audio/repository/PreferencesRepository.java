@@ -61,7 +61,8 @@ public final class PreferencesRepository {
         return new AudioPreferences(volumes, number(p, "tone.bass", 0), number(p, "tone.treble", 0), hidden,
                 recording, p.getProperty("lcd.color", "theme"),
                 Boolean.parseBoolean(p.getProperty("recording.noticeShown", "false")),
-                path(p, "player.lastFolder", null), proxy(p));
+                path(p, "player.lastFolder", null), proxy(p),
+                (int) number(p, "racks.size", AudioPreferences.DEFAULT_SIZE));
     }
 
     public void save(AudioPreferences prefs) {
@@ -76,6 +77,7 @@ public final class PreferencesRepository {
         p.setProperty("recording.maxMinutes", String.valueOf(prefs.recording().maxMinutes()));
         p.setProperty("recording.noticeShown", String.valueOf(prefs.recordingNoticeShown()));
         p.setProperty("lcd.color", prefs.lcdColor());
+        p.setProperty("racks.size", String.valueOf(prefs.size()));
         ProxySettings proxy = prefs.proxy();
         p.setProperty("proxy.mode", proxy.mode().name().toLowerCase(Locale.ROOT));
         p.setProperty("proxy.host", proxy.host());

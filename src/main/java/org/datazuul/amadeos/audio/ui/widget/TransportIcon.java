@@ -17,7 +17,8 @@ public final class TransportIcon implements Icon {
         }
     }
 
-    private static final int SIZE = 16;
+    /** The symbols are drawn on a 16 x 16 grid and scaled to the rack size. */
+    private static final int GRID = 16;
     private final Kind kind;
 
     public TransportIcon(Kind kind) {
@@ -29,6 +30,8 @@ public final class TransportIcon implements Icon {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.translate(x, y);
+        double s = size() / (double) GRID;
+        g2.scale(s, s);
         g2.setColor(c.isEnabled() ? c.getForeground() : UIManager.getColor("textInactiveText"));
         switch (kind) {
             case PREVIOUS -> {
@@ -83,14 +86,18 @@ public final class TransportIcon implements Icon {
         return new Polygon(new int[]{x1, x2, x3}, new int[]{y1, y2, y3}, 3);
     }
 
+    private static int size() {
+        return Math.max(10, Scale.px(GRID));
+    }
+
     @Override
     public int getIconWidth() {
-        return SIZE;
+        return size();
     }
 
     @Override
     public int getIconHeight() {
-        return SIZE;
+        return size();
     }
 
     /** A transport push button with tooltip and accessible name. */
@@ -111,8 +118,8 @@ public final class TransportIcon implements Icon {
     private static void style(AbstractButton b, Kind kind) {
         b.setToolTipText(kind.label());
         b.getAccessibleContext().setAccessibleName(kind.label());
-        b.setMargin(new Insets(6, 14, 6, 14));
-        Dimension size = new Dimension(50, 34);
+        b.setMargin(Scale.insets(6, 14, 6, 14));
+        Dimension size = Scale.size(50, 34);
         b.setPreferredSize(size);
         b.setMinimumSize(size);
         b.setFocusable(true);

@@ -29,6 +29,13 @@ window gets smaller.
 
 Pressing Play on one device stops the others.
 
+### Size
+
+The racks are drawn at 60 % of their original size, so the window fits on smaller screens (about
+880 × 730 pixels instead of 1320 × 1030). *Settings... → Display → Rack size* offers 60, 80 and 100 %;
+the new size is used from the next start. Texts shrink with the racks but stay at least 9 pixels high,
+and the lists in the playlist panel (files, CD tracks, stations) keep their normal text size.
+
 ### Colours
 
 Rack fronts, bevels, rack frame, lists and the logo use the colours of the desktop theme chosen in the
@@ -114,7 +121,7 @@ only the CD rack uses native code through JNA: libcdio on Linux, kernel32 IOCTLs
 | `ui.main` | frameless `MainWindow`, `HeaderRack`, `MainPresenter` |
 | `ui.rack.mixer`, `.cd`, `.player`, `.webradio` | rack panel, playlist view and presenter per device |
 | `ui.playlist` | `PlaylistPanel`, `CoverColumn` |
-| `ui.widget` | `SevenSegmentDisplay`, `DotMatrixDisplay` (5×7 font from dz-radio), `Fader`, `LevelMeter`, `SpectrumMeter`, `SeekBar`, `CoverView`, `TransportIcon`, `Led`, `RackPanel`, `RackRail`, `LcdPanel` |
+| `ui.widget` | `Scale` (rack size), `SevenSegmentDisplay`, `DotMatrixDisplay` (5×7 font from dz-radio), `Fader`, `LevelMeter`, `SpectrumMeter`, `SeekBar`, `CoverView`, `TransportIcon`, `Led`, `RackPanel`, `RackRail`, `LcdPanel` |
 
 Presenters run on the EDT; drive, decoder and network work runs on virtual threads and returns
 through `EdtExecutor`. Audio events (state, levels, end of track) arrive on the audio threads and are

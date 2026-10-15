@@ -4,12 +4,14 @@ import static org.datazuul.amadeos.audio.i18n.Texts.tr;
 
 import org.datazuul.amadeos.audio.ui.widget.CoverView;
 import org.datazuul.amadeos.audio.ui.widget.RackPanel;
+import org.datazuul.amadeos.audio.ui.widget.Scale;
 
 import javax.swing.*;
 import java.awt.*;
 
 /** Large cover with album, artist, details and the cover's source, left of the playlist. */
 public final class CoverColumn extends JPanel {
+    /** Cover size at 100 %. */
     public static final int SIZE = 196;
     private final CoverView cover = new CoverView(SIZE);
     private final JLabel line1 = new JLabel(" ");
@@ -18,7 +20,7 @@ public final class CoverColumn extends JPanel {
     private final JLabel source = RackPanel.subLabel(" ");
 
     public CoverColumn() {
-        super(new BorderLayout(0, 6));
+        super(new BorderLayout(0, Scale.px(6)));
         setOpaque(false);
         line1.setFont(line1.getFont().deriveFont(Font.BOLD, 14f));
         line2.setFont(line2.getFont().deriveFont(Font.PLAIN, 13f));
@@ -29,12 +31,12 @@ public final class CoverColumn extends JPanel {
         for (JLabel l : new JLabel[]{line1, line2, line3}) {
             l.setAlignmentX(LEFT_ALIGNMENT);
             text.add(l);
-            text.add(Box.createVerticalStrut(2));
+            text.add(Box.createVerticalStrut(Scale.px(2)));
         }
         add(cover, BorderLayout.NORTH);
         add(text, BorderLayout.CENTER);
         add(source, BorderLayout.SOUTH);
-        setPreferredSize(new Dimension(SIZE, 10));
+        setPreferredSize(new Dimension(Scale.px(SIZE), 10));
     }
 
     public void setText(String first, String second, String third) {
@@ -52,6 +54,6 @@ public final class CoverColumn extends JPanel {
     private static String html(String s) {
         if (s == null || s.isBlank()) return " ";
         String escaped = s.replace("&", "&amp;").replace("<", "&lt;");
-        return "<html><body style='width:" + (SIZE - 8) + "px'>" + escaped + "</body></html>";
+        return "<html><body style='width:" + (Scale.px(SIZE) - 8) + "px'>" + escaped + "</body></html>";
     }
 }
