@@ -62,6 +62,8 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
     private Consumer<String> openOptions = s -> {
     };
     private StationBrowserView.Tab tab = StationBrowserView.Tab.FAVORITES;
+    /** Text of the filter field on the Favorites, Genres and Countries tabs. */
+    private String filter = "";
     private List<Station> context = List.of();
     private Station current;
     private RadioPlayback playback;
@@ -131,10 +133,11 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
 
     void showTab(StationBrowserView.Tab newTab) {
         tab = newTab;
+        filter = "";
         view.selectTab(newTab);
         switch (newTab) {
             case FAVORITES -> {
-                showList(favorites.favorites());
+                showFavorites();
                 view.status.setText(" ");
             }
             case SEARCH -> {
@@ -142,8 +145,8 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
                 view.status.setText(tr("stations.search.hint"));
                 view.query.requestFocusInWindow();
             }
-            case GENRES -> loadChoices(() -> directory.topTags(150), (tag, count) -> tag + " (" + count + ")");
-            case COUNTRIES -> loadChoices(directory::countries, (code, count) -> countryName(code) + " (" + count + ")");
+            case GENRES -> loadChoices(() -> directory.topTags(150), tag -> tag);
+            case COUNTRIES -> loadChoices(directory::countries, WebRadioPresenter::countryName);
         }
         updateInfo();
     }
@@ -165,7 +168,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
         Map<String, Integer> load() throws IOException;
     }
 
-    private void loadChoices(ChoiceSource source, java.util.function.BiFunction<String, Integer, String> label) {
+    private void loadChoices(ChoiceSource source, java.util.function.Function<String, String> name) {
         showList(List.of());
         view.choices.clear();
         view.status.setText(tr("stations.loading"));
@@ -176,7 +179,7 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
                 Map<String, Integer> items = source.load();
                 edt.execute(() -> {
                     if (req != choiceRequest || tab != forTab) return;
-                    items.forEach((k, v) -> view.choices.addElement(new StationBrowserView.Choice(k, label.apply(k, v))));
+                    view.setChoices(StationBrowserView.sortedChoices(items, name), filter);
                     view.status.setText(tr(forTab == StationBrowserView.Tab.GENRES ? "stations.genres" : "stations.countries",
                             items.size()));
                 });
@@ -192,12 +195,38 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
                 : directory.byCountry(choice.key(), LIMIT), choice.label());
     }
 
+    /** Typing in the field: filters the open list (the Search tab waits for Enter). */
+    void filter(String text) {
+        filter = text == null ? "" : text.strip();
+        switch (tab) {
+            case FAVORITES -> {
+                showFavorites();
+                view.status.setText(filter.isEmpty() ? " " : tr("stations.found", view.model.stations.size(), "\"" + filter + "\""));
+            }
+            case GENRES, COUNTRIES -> view.filterChoices(filter);
+            case SEARCH -> {
+            }
+        }
+    }
+
+    /** Enter in the field: searches on the Search tab, otherwise opens the first match of the filtered list. */
+    void queryEntered(String text) {
+        switch (tab) {
+            case SEARCH -> search(text);
+            case FAVORITES -> {
+                if (view.model.getRowCount() > 0) {
+                    view.table.getSelectionModel().setSelectionInterval(0, 0);
+                    view.table.requestFocusInWindow();
+                }
+            }
+            case GENRES, COUNTRIES -> {
+                if (!view.choices.isEmpty()) view.choiceList.setSelectedIndex(0);
+            }
+        }
+    }
+
     void search(String text) {
         if (text == null || text.isBlank()) return;
-        if (tab != StationBrowserView.Tab.SEARCH) {
-            tab = StationBrowserView.Tab.SEARCH;
-            view.selectTab(tab);
-        }
         String q = text.strip();
         // "jazz" finds names and genres; a two-letter code also searches the country.
         load(() -> {
@@ -234,6 +263,15 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
         });
     }
 
+    /** The favourites matching the filter; reordering is only possible on the whole list. */
+    private void showFavorites() {
+        List<Station> all = favorites.favorites();
+        showList(filter.isEmpty() ? all : all.stream().filter(s -> StationBrowserView.contains(s.name(), filter)
+                || StationBrowserView.contains(s.genre(), filter) || StationBrowserView.contains(s.country(), filter)).toList());
+        view.up.setEnabled(filter.isEmpty());
+        view.down.setEnabled(filter.isEmpty());
+    }
+
     private void showList(List<Station> stations) {
         view.model.set(stations, current);
         updateInfo();
@@ -263,14 +301,14 @@ public final class WebRadioPresenter implements AudioChannel.Listener {
         if (JOptionPane.showConfirmDialog(parent, tr("stations.remove.confirm", s.name()), tr("source.webradio"),
                 JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
         favorites.remove(s);
-        showList(favorites.favorites());
+        showFavorites();
     }
 
     void moveFavorite(int delta) {
         Station s = view.selected();
         if (s == null || tab != StationBrowserView.Tab.FAVORITES) return;
         favorites.move(s, delta);
-        showList(favorites.favorites());
+        showFavorites();
         int row = view.model.indexOf(s);
         if (row >= 0) view.table.getSelectionModel().setSelectionInterval(row, row);
     }

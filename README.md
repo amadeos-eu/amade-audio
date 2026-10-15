@@ -18,7 +18,7 @@ buttons show or hide the racks, and the LED in a button marks the active device.
 | Rack | What it does |
 |------|--------------|
 | **Mixer** | A fader per device (CD, Player, Web), microphone level, output device (speakers, headphones, HDMI, ...), bass and treble, and the master volume of PipeWire. Mute silences all devices. |
-| **CD** | Plays audio CDs through libcdio, with error correction by libcdio-paranoia when it is installed. Titles from CD-Text or [MusicBrainz](https://musicbrainz.org), cover from the [Cover Art Archive](https://coverartarchive.org). |
+| **CD** | Plays audio CDs: on Linux through libcdio, with error correction by libcdio-paranoia when it is installed; on Windows through the system's own CD-ROM driver, with no extra libraries. Titles from CD-Text or [MusicBrainz](https://musicbrainz.org), cover from the [Cover Art Archive](https://coverartarchive.org). |
 | **Player** | Plays MP3, Ogg Vorbis, AAC, FLAC, WAV/AIFF and MIDI files; position slider, 16-band spectrum. Files and folders can be dropped onto the playlist. |
 | **Web Radio** | Internet radio as in [dz-radio](https://github.com/datazuul/dz-radio): favourites, search, genres and countries from [radio-browser.info](https://www.radio-browser.info), stream titles, level meters, and recording. *Stations...* opens the station list with the favourites. |
 
@@ -40,7 +40,7 @@ in *Options → Display*.
 
 ### CD titles and covers
 
-1. libcdio reads the table of contents; from it amade-audio computes the MusicBrainz disc ID.
+1. libcdio (Windows: the CD-ROM driver) reads the table of contents; from it amade-audio computes the MusicBrainz disc ID.
 2. Titles come, in this order, from the local cache, CD-Text on the disc, or MusicBrainz (by disc ID,
    then a fuzzy lookup by table of contents). If several releases match, a dialog asks which one.
 3. *Edit Titles...* names the tracks by hand; *Look up (MusicBrainz)* asks again.
@@ -95,7 +95,7 @@ test checks that every translation is complete.
 Java 21, Swing, Guice; same structure as [amade-pad](https://github.com/datazuul/amade-pad) and
 [amade-mail](https://github.com/datazuul/amade-mail). Theme, Motif look and start-up come from
 [amade-commons](https://github.com/datazuul/amade-commons). Playback is pure Java (Java Sound);
-only the CD rack uses native code, libcdio through JNA.
+only the CD rack uses native code through JNA: libcdio on Linux, kernel32 IOCTLs on Windows.
 
 | Package | Content |
 |---------|---------|
@@ -106,7 +106,7 @@ only the CD rack uses native code, libcdio through JNA.
 | `service.webradio` | from dz-radio: `IcyInputStream`, `BufferedRadioInputStream`, `PlaylistParser`, stream sniffing; `RadioSession` (download, reconnect, recording tap), `RadioBrowserClient` (mirror failover), `StationRepository` (favourites; takes over dz-radio's `channels.json`) |
 | `service.recording` | `StreamRecorder` (split at frame boundaries, `.part` files, maximum duration), `Mp3Tagger` |
 | `service.player` | `Playlist` (shuffle, repeat), `M3uPlaylist`, `TagReader` (jaudiotagger), `AudioFiles` |
-| `service.cd` | `LibCdioDrive` (libcdio and libcdio-paranoia via JNA), `DiscId`, `CdPcmSource` |
+| `service.cd` | `LibCdioDrive` (libcdio and libcdio-paranoia via JNA), `WindowsCdDrive` (`IOCTL_CDROM_READ_TOC_EX` and `IOCTL_CDROM_RAW_READ` via JNA, no error correction), `DiscId`, `CdPcmSource` |
 | `service.metadata` | `MusicBrainzClient`, `CdMetadataService`, `ArtworkService`, `MetadataCache` |
 | `service.mixer` | `SoundServer`: master, microphone and output through `wpctl` / `pactl` |
 | `service.net` | `NetworkProxy`: proxy selector and authenticator for all connections (system, none, manual) |
@@ -151,6 +151,23 @@ The Debian package recommends:
 
 The package installs `amade-audio.desktop` (`Categories=AudioVideo;Audio;Player;`), so the amadeOS
 front panel lists it with the multimedia applications.
+
+### Windows
+
+`./gradlew windowsInstaller` builds an installer with jpackage that includes a Java runtime, so Windows
+users need no Java. It runs only on Windows; MSI and EXE also need
+[WiX Toolset 3](https://github.com/wixtoolset/wix3/releases) on the `PATH` (JDK 21 does not support WiX 4/5).
+
+```bat
+gradlew windowsInstaller                            :: build\windows\msi\amade-audio-0.1.0.msi
+gradlew windowsInstaller -PinstallerType=exe        :: setup .exe
+gradlew windowsInstaller -PinstallerType=app-image  :: folder with amade-audio.exe, no WiX needed
+```
+
+The `windows` job in CI builds the MSI and a portable ZIP of the app image on every push; both are
+in the `amade-audio-windows` artifact of the workflow run. The installer is not code-signed, so
+SmartScreen warns on first start. On Windows the CD rack reads audio CDs through the system's
+CD-ROM driver; master volume is the application's own fader, and the output list stays empty.
 
 ## Roadmap
 

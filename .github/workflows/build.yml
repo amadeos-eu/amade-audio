@@ -48,3 +48,60 @@ jobs:
         with:
           name: test-reports
           path: build/reports/tests/test
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+      # jpackage needs WiX Toolset 3 for MSI (JDK 21 does not support WiX 4/5).
+      - name: Install WiX Toolset 3
+        shell: pwsh
+        run: |
+          if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            $bin = Get-ChildItem 'C:\Program Files (x86)\WiX Toolset v3*\bin' -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $bin) {
+              choco install wixtoolset --no-progress -y
+              $bin = Get-ChildItem 'C:\Program Files (x86)\WiX Toolset v3*\bin' -Directory | Select-Object -First 1
+            }
+            $bin.FullName | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          }
+      # Not required yet: the tests have only been run on Linux so far. Make this step required
+      # (remove continue-on-error) once it passes.
+      - name: Test on Windows
+        id: windows-tests
+        continue-on-error: true
+        run: ./gradlew test --no-daemon
+      - name: Build the MSI
+        run: ./gradlew windowsInstaller --no-daemon
+      - name: Build the portable app image
+        run: ./gradlew windowsInstaller -PinstallerType=app-image --no-daemon
+      - name: Check and pack the results
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem build/windows/msi/*.msi
+          if ($msi.Count -ne 1) { throw "Expected one MSI, found $($msi.Count)" }
+          if ($msi.Length -lt 30MB) { throw "MSI is too small to contain a Java runtime: $($msi.Length) bytes" }
+          if (-not (Test-Path build/windows/app-image/amade-audio/amade-audio.exe)) { throw 'amade-audio.exe missing' }
+          Compress-Archive -Path build/windows/app-image/amade-audio -DestinationPath build/windows/amade-audio-portable.zip
+          Write-Host "MSI: $($msi.Name), $([math]::Round($msi.Length / 1MB)) MB"
+      - name: Upload the Windows packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: amade-audio-windows
+          path: |
+            build/windows/msi/*.msi
+            build/windows/amade-audio-portable.zip
+          if-no-files-found: error
+      - name: Upload test reports
+        if: failure() || steps.windows-tests.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports-windows
+          path: build/reports/tests/test

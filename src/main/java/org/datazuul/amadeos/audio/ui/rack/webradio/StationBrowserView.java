@@ -13,9 +13,18 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.text.Collator;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.function.Function;
 
-/** Stations in the playlist panel: favourites, search, genres and countries, as in dz-radio. */
+/**
+ * Stations in the playlist panel: favourites, search, genres and countries, as in dz-radio. The text field
+ * searches radio-browser on the Search tab and filters the open list on the other tabs.
+ */
 public final class StationBrowserView {
     enum Tab {
         FAVORITES, SEARCH, GENRES, COUNTRIES;
@@ -38,17 +47,44 @@ public final class StationBrowserView {
     final JButton up = new JButton(tr("stations.up"));
     final JButton down = new JButton(tr("stations.down"));
     final JTextField query = new JTextField(24);
+    final JLabel queryLabel = new JLabel(tr("stations.tab.search"));
     final JLabel status = new JLabel(" ");
     final JPanel tabs = new JPanel(new GridLayout(1, Tab.values().length, 2, 0));
     final java.util.Map<Tab, JToggleButton> tabButtons = new java.util.EnumMap<>(Tab.class);
     final JPanel component;
+    /** All genres or countries; {@link #choices} shows those matching the filter. */
+    private List<Choice> allChoices = List.of();
+    /** Set while the field is cleared by a tab change, so that does not count as typing. */
+    private boolean clearing;
 
-    /** An entry of the genre or country list: shown text and the key to look up. */
-    record Choice(String key, String label) {
+    /** An entry of the genre or country list: the key to look up, its name and the shown text. */
+    record Choice(String key, String name, String label) {
         @Override
         public String toString() {
             return label;
         }
+
+        boolean matches(String filter) {
+            return filter.isEmpty() || contains(name, filter) || key.equalsIgnoreCase(filter);
+        }
+    }
+
+    /** Genres or countries with their station count, sorted alphabetically by name in the user's language. */
+    static List<Choice> sortedChoices(Map<String, Integer> counts, Function<String, String> name) {
+        List<Choice> list = new ArrayList<>();
+        counts.forEach((key, count) -> {
+            String n = name.apply(key);
+            list.add(new Choice(key, n, n + " (" + count + ")"));
+        });
+        Collator collator = Collator.getInstance();
+        collator.setStrength(Collator.SECONDARY);
+        list.sort(Comparator.comparing(Choice::name, collator));
+        return list;
+    }
+
+    /** Case-insensitive substring match. */
+    static boolean contains(String text, String filter) {
+        return text != null && text.toLowerCase(Locale.ROOT).contains(filter.toLowerCase(Locale.ROOT));
     }
 
     StationBrowserView(WebRadioPresenter p) {
@@ -82,7 +118,26 @@ public final class StationBrowserView {
         remove.addActionListener(e -> p.removeFavorite());
         up.addActionListener(e -> p.moveFavorite(-1));
         down.addActionListener(e -> p.moveFavorite(1));
-        query.addActionListener(e -> p.search(query.getText()));
+        query.addActionListener(e -> p.queryEntered(query.getText()));
+        query.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                changed();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                changed();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+            }
+
+            private void changed() {
+                if (!clearing) p.filter(query.getText());
+            }
+        });
         query.getAccessibleContext().setAccessibleName(tr("stations.search.accessible"));
         status.setFont(status.getFont().deriveFont(Font.PLAIN, 12f));
 
@@ -100,10 +155,9 @@ public final class StationBrowserView {
         lists.setOpaque(false);
         lists.add(choiceScroll, BorderLayout.WEST);
         lists.add(PlaylistPanel.scroll(table), BorderLayout.CENTER);
-        JLabel searchLabel = new JLabel(tr("stations.tab.search"));
-        searchLabel.setLabelFor(query);
+        queryLabel.setLabelFor(query);
         component = PlaylistPanel.view(cover, lists, PlaylistPanel.buttonRow(
-                new JComponent[]{play, add, remove, up, down, searchLabel, query}, new JComponent[]{status}));
+                new JComponent[]{play, add, remove, up, down, queryLabel, query}, new JComponent[]{status}));
     }
 
     void selectTab(Tab tab) {
@@ -115,6 +169,22 @@ public final class StationBrowserView {
         add.setVisible(!favorites);
         choiceScroll.setVisible(tab == Tab.GENRES || tab == Tab.COUNTRIES);
         choiceScroll.getParent().revalidate();
+        boolean search = tab == Tab.SEARCH;
+        queryLabel.setText(tr(search ? "stations.tab.search" : "stations.filter"));
+        query.getAccessibleContext().setAccessibleName(tr(search ? "stations.search.accessible" : "stations.filter.accessible"));
+        clearing = true;
+        query.setText("");
+        clearing = false;
+    }
+
+    void setChoices(List<Choice> list, String filter) {
+        allChoices = List.copyOf(list);
+        filterChoices(filter);
+    }
+
+    void filterChoices(String filter) {
+        choices.clear();
+        for (Choice c : allChoices) if (c.matches(filter)) choices.addElement(c);
     }
 
     Station selected() {
