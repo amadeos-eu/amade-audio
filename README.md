@@ -4,7 +4,7 @@
 rack-style player for audio CDs, music files and internet radio in Java Swing, inspired by the
 hardware-like players of the 1990s and drawn in the colours of the current amadeOS desktop theme.
 
-[![License](https://img.shields.io/badge/license-EUPL--1.2-blue)](LICENSE) ![Java](https://img.shields.io/badge/Java-21-orange) ![Debian](https://img.shields.io/badge/Debian-package-red)
+[![License](https://img.shields.io/badge/license-EUPL--1.2-blue)](LICENSE) ![Java](https://img.shields.io/badge/Java-25-orange) ![Debian](https://img.shields.io/badge/Debian-package-red)
 
 > Status: early development (0.1.0).
 
@@ -99,7 +99,7 @@ test checks that every translation is complete.
 
 ## Architecture
 
-Java 21, Swing, Guice; same structure as [amade-pad](https://github.com/datazuul/amade-pad) and
+Java 25, Swing, Guice; same structure as [amade-pad](https://github.com/datazuul/amade-pad) and
 [amade-mail](https://github.com/datazuul/amade-mail). Theme, Motif look and start-up come from
 [amade-commons](https://github.com/datazuul/amade-commons). Playback is pure Java (Java Sound);
 only the CD rack uses native code through JNA: libcdio on Linux, kernel32 IOCTLs on Windows.
@@ -129,7 +129,7 @@ moved to the EDT by the presenters.
 
 ## Building and testing
 
-Requirements: Java 21 JDK; `dpkg-deb` for the Debian package.
+Requirements: Java 25 JDK; `dpkg-deb` for the Debian package.
 
 `amade-commons` is taken from JitPack. If it is checked out next to this repository
 (`../amade-commons`), Gradle builds that checkout instead.
@@ -163,7 +163,7 @@ front panel lists it with the multimedia applications.
 
 `./gradlew windowsInstaller` builds an installer with jpackage that includes a Java runtime, so Windows
 users need no Java. It runs only on Windows; MSI and EXE also need
-[WiX Toolset 3](https://github.com/wixtoolset/wix3/releases) on the `PATH` (JDK 21 does not support WiX 4/5).
+[WiX Toolset 3](https://github.com/wixtoolset/wix3/releases) on the `PATH` (JDK 25 also takes WiX 4/5).
 
 ```bat
 gradlew windowsInstaller                            :: build\windows\msi\amade-audio-0.1.0.msi
