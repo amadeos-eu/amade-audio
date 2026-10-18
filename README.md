@@ -94,7 +94,7 @@ Audio Station speaks English, Deutsch, Français, Español and Italiano. It foll
 amadeOS desktop; *Settings...* → *Display* → *Language* sets an own language for Audio Station alone
 (from the next start). Outside amadeOS it uses `LANG`. Name plates, LCD captions and the dot-matrix
 display are translated too; the dot-matrix font draws accented letters (é, à, ç, ñ, ...) and ¿ ¡.
-The texts live in `src/main/resources/eu/amadeos/audio/messages*.properties` (UTF-8); a
+The texts live in `src/main/resources/eu/amadeos/apps/audio/messages*.properties` (UTF-8); a
 test checks that every translation is complete.
 
 ## Architecture

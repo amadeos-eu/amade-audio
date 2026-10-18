@@ -6,7 +6,7 @@ plugins {
 group = 'eu.amadeos'
 version = '0.1.0'
 
-def mainClassName = 'eu.amadeos.audio.bootstrap.AmadeAudioApplication'
+def mainClassName = 'eu.amadeos.apps.audio.bootstrap.AmadeAudioApplication'
 
 // The MIDI player renders through the JDK's software synthesizer (Gervill), whose streaming interface
 // lives in a package java.desktop does not export.
