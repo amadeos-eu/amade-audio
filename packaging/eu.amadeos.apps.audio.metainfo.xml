@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metadata of amade-audio, installed as /usr/share/metainfo/eu.amadeos.apps.audio.metainfo.xml.
+     amadeOS Software shows it for the installed package; a repository's appstream-generator reads it too. -->
+<component type="desktop-application">
+  <id>eu.amadeos.apps.audio</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>EUPL-1.2</project_license>
+
+  <name>amadeOS Audio Station</name>
+  <name xml:lang="de">amadeOS Audio-Station</name>
+  <name xml:lang="fr">Station audio amadeOS</name>
+  <name xml:lang="es">Estación de audio de amadeOS</name>
+  <name xml:lang="it">Stazione audio di amadeOS</name>
+
+  <summary>Rack-style player for audio CDs, music files and internet radio</summary>
+  <summary xml:lang="de">Player im Rack-Stil für Audio-CDs, Musikdateien und Internetradio</summary>
+  <summary xml:lang="fr">Lecteur en rack pour CD audio, fichiers musicaux et radio Internet</summary>
+  <summary xml:lang="es">Reproductor en rack para CD de audio, archivos de música y radio por Internet</summary>
+  <summary xml:lang="it">Lettore a rack per CD audio, file musicali e radio Internet</summary>
+
+  <description>
+    <p>amade-audio is the Audio Station of the amadeOS desktop: a rack of devices for audio CDs, music files and internet radio, inspired by the hardware-like players of the 1990s and drawn in the colours of the desktop theme.</p>
+    <p xml:lang="de">amade-audio ist die Audio-Station des amadeOS-Desktops: ein Geräte-Rack für Audio-CDs, Musikdateien und Internetradio, inspiriert von den Hardware-ähnlichen Playern der 1990er-Jahre und in den Farben des Desktop-Farbschemas gezeichnet.</p>
+    <p xml:lang="fr">amade-audio est la station audio du bureau amadeOS : un rack d'appareils pour CD audio, fichiers musicaux et radio Internet, inspiré des lecteurs façon matériel des années 1990 et dessiné dans les couleurs du thème du bureau.</p>
+    <p xml:lang="es">amade-audio es la estación de audio del escritorio amadeOS: un rack de aparatos para CD de audio, archivos de música y radio por Internet, inspirado en los reproductores con aspecto de hardware de los años 90 y dibujado con los colores del tema del escritorio.</p>
+    <p xml:lang="it">amade-audio è la stazione audio del desktop amadeOS: un rack di apparecchi per CD audio, file musicali e radio Internet, ispirato ai lettori dall'aspetto hardware degli anni '90 e disegnato nei colori del tema del desktop.</p>
+    <ul>
+      <li>Mixer with a fader per device, bass, treble and master volume</li>
+      <li xml:lang="de">Mischpult mit einem Regler pro Gerät, Bass, Höhen und Gesamtlautstärke</li>
+      <li xml:lang="fr">Table de mixage avec un curseur par appareil, graves, aigus et volume général</li>
+      <li xml:lang="es">Mezclador con un control por aparato, graves, agudos y volumen general</li>
+      <li xml:lang="it">Mixer con un cursore per apparecchio, bassi, alti e volume generale</li>
+      <li>CD player with track names from the internet</li>
+      <li xml:lang="de">CD-Player mit Titelnamen aus dem Internet</li>
+      <li xml:lang="fr">Lecteur CD avec les titres des morceaux depuis Internet</li>
+      <li xml:lang="es">Reproductor de CD con los títulos de las pistas desde Internet</li>
+      <li xml:lang="it">Lettore CD con i titoli dei brani da Internet</li>
+      <li>MP3, OGG, FLAC, WAV, AAC and MIDI files with a playlist</li>
+      <li xml:lang="de">MP3-, OGG-, FLAC-, WAV-, AAC- und MIDI-Dateien mit Wiedergabeliste</li>
+      <li xml:lang="fr">Fichiers MP3, OGG, FLAC, WAV, AAC et MIDI avec une liste de lecture</li>
+      <li xml:lang="es">Archivos MP3, OGG, FLAC, WAV, AAC y MIDI con una lista de reproducción</li>
+      <li xml:lang="it">File MP3, OGG, FLAC, WAV, AAC e MIDI con una playlist</li>
+      <li>Internet radio stations, with recording</li>
+      <li xml:lang="de">Internetradiosender, mit Aufnahme</li>
+      <li xml:lang="fr">Stations de radio Internet, avec enregistrement</li>
+      <li xml:lang="es">Emisoras de radio por Internet, con grabación</li>
+      <li xml:lang="it">Stazioni radio Internet, con registrazione</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">amade-audio.desktop</launchable>
+  <icon type="stock">amade-audio</icon>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Audio</category>
+    <category>Player</category>
+  </categories>
+
+  <url type="homepage">https://github.com/datazuul/amade-audio</url>
+  <url type="bugtracker">https://github.com/datazuul/amade-audio/issues</url>
+  <developer id="eu.amadeos">
+    <name>amadeOS Project</name>
+  </developer>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>The racks and the playlist</caption>
+      <caption xml:lang="de">Die Racks und die Wiedergabeliste</caption>
+      <caption xml:lang="fr">Les racks et la liste de lecture</caption>
+      <caption xml:lang="es">Los racks y la lista de reproducción</caption>
+      <caption xml:lang="it">I rack e la playlist</caption>
+      <image>https://raw.githubusercontent.com/datazuul/amade-audio/main/docs/screenshots/amade-audio.png</image>
+    </screenshot>
+  </screenshots>
+
+  <provides>
+    <binary>amade-audio</binary>
+  </provides>
+  <content_rating type="oars-1.1"/>
+</component>
