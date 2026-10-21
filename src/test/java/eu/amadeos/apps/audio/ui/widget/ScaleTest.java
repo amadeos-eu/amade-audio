@@ -26,6 +26,16 @@ class ScaleTest {
     }
 
     @Test
+    void automaticSizeFitsTheScreen() {
+        assertEquals(60, Scale.fitting(1366, 728), "laptop");
+        assertEquals(60, Scale.fitting(1024, 600), "too small for anything: the smallest size");
+        assertEquals(80, Scale.fitting(1920, 1040), "Full HD with a panel");
+        assertEquals(100, Scale.fitting(1920, 1170), "1920 x 1200");
+        assertEquals(100, Scale.fitting(2560, 1400));
+        assertEquals(80, Scale.fitting(1280, 1400), "narrow screen");
+    }
+
+    @Test
     void textsStayReadable() {
         Scale.setPercent(60);
         assertEquals(9f, Scale.text(12), 0.001f, "not below the minimum");

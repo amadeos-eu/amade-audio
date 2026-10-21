@@ -14,7 +14,7 @@ import java.util.Set;
  * @param lcdColor    {@code theme} or a fixed colour name, see the LCD palette
  * @param lastFolder  last folder opened in the player, may be null
  * @param proxy       network proxy for streams and web services
- * @param size        size of the racks in percent: 60, 80 or 100
+ * @param size        size of the racks in percent: 60, 80 or 100, or {@link #AUTO}
  */
 public record AudioPreferences(Map<SourceId, Float> volumes, double bassDb, double trebleDb, Set<String> hiddenRacks,
                                RecordingSettings recording, String lcdColor, boolean recordingNoticeShown,
@@ -35,12 +35,15 @@ public record AudioPreferences(Map<SourceId, Float> volumes, double bassDb, doub
                 ProxySettings.DEFAULT, DEFAULT_SIZE);
     }
 
+    /** Size of the racks chosen at each start to fit the screen. */
+    public static final int AUTO = 0;
     /** Sizes of the racks offered in the settings, in percent. */
     public static final int[] SIZES = {60, 80, 100};
-    public static final int DEFAULT_SIZE = 60;
+    public static final int DEFAULT_SIZE = AUTO;
 
-    /** The nearest of {@link #SIZES}. */
+    /** {@link #AUTO} for 0 or less, otherwise the nearest of {@link #SIZES}. */
     public static int normalizeSize(int percent) {
+        if (percent <= AUTO) return AUTO;
         int best = SIZES[0];
         for (int s : SIZES) if (Math.abs(s - percent) < Math.abs(best - percent)) best = s;
         return best;
