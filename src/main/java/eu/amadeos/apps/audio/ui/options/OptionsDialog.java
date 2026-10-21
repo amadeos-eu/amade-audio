@@ -4,14 +4,14 @@ import eu.amadeos.apps.audio.domain.AudioPreferences;
 import eu.amadeos.apps.audio.domain.ProxySettings;
 import eu.amadeos.apps.audio.domain.RecordingSettings;
 import eu.amadeos.apps.audio.service.net.NetworkProxy;
-import eu.amadeos.apps.audio.i18n.Texts;
+import eu.amadeos.commons.i18n.Texts;
 import eu.amadeos.apps.audio.ui.widget.Scale;
 import eu.amadeos.commons.i18n.LanguageChooser;
 import eu.amadeos.commons.i18n.LocaleSettings;
 import eu.amadeos.commons.i18n.Messages;
 import eu.amadeos.commons.swing.EdtExecutor;
 
-import static eu.amadeos.apps.audio.i18n.Texts.tr;
+import static eu.amadeos.commons.i18n.Texts.tr;
 
 import javax.swing.*;
 import java.awt.*;

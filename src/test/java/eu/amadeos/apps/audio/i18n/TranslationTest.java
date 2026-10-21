@@ -1,7 +1,9 @@
 package eu.amadeos.apps.audio.i18n;
 
+import eu.amadeos.apps.audio.bootstrap.AmadeAudioApplication;
 import eu.amadeos.commons.i18n.Language;
 import eu.amadeos.commons.i18n.Messages;
+import eu.amadeos.commons.i18n.Texts;
 import eu.amadeos.commons.i18n.TranslationCheck;
 import org.junit.jupiter.api.Test;
 
@@ -14,12 +16,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class TranslationTest {
     @Test
     void everyLanguageHasEveryText() {
-        assertEquals(Map.of(), TranslationCheck.problems(Texts.class, Texts.BUNDLE));
+        assertEquals(Map.of(), TranslationCheck.problems(AmadeAudioApplication.class, Texts.bundle()));
     }
 
     @Test
     void keysBuiltFromIdsExist() {
-        Messages english = Messages.load(Texts.class, Texts.BUNDLE, Locale.ENGLISH);
+        Messages english = Messages.load(AmadeAudioApplication.class, Texts.bundle(), Locale.ENGLISH);
         List<String> keys = List.of("rack.mixer", "rack.cd", "rack.player", "rack.webradio",
                 "source.cd", "source.player", "source.webradio",
                 "options.page.Recording", "options.page.Display", "options.page.Network",
@@ -33,19 +35,19 @@ class TranslationTest {
 
     @Test
     void countsAndNumbersFollowTheLanguage() {
-        Messages english = Messages.load(Texts.class, Texts.BUNDLE, Locale.ENGLISH);
+        Messages english = Messages.load(AmadeAudioApplication.class, Texts.bundle(), Locale.ENGLISH);
         assertEquals("no tracks", english.format("cd.tracks", 0));
         assertEquals("1 track", english.format("cd.tracks", 1));
         assertEquals("12 tracks", english.format("cd.tracks", 12));
         assertEquals("Track 07", english.format("cd.track-title", 7));
         assertEquals("3 stations for \"jazz\"", english.format("stations.found", 3, "\"jazz\""));
-        Messages german = Messages.load(Texts.class, Texts.BUNDLE, Locale.GERMANY);
+        Messages german = Messages.load(AmadeAudioApplication.class, Texts.bundle(), Locale.GERMANY);
         assertEquals("1.234 Dateien", german.format("player.files", 1234));
         assertEquals("Titel 03", german.format("cd.track-title", 3));
-        Messages french = Messages.load(Texts.class, Texts.BUNDLE, Locale.FRANCE);
+        Messages french = Messages.load(AmadeAudioApplication.class, Texts.bundle(), Locale.FRANCE);
         assertEquals("Impossible d'éjecter : busy", french.format("cd.error.eject", "busy"));
         for (Language language : Language.values()) {
-            Messages m = Messages.load(Texts.class, Texts.BUNDLE, language.locale());
+            Messages m = Messages.load(AmadeAudioApplication.class, Texts.bundle(), language.locale());
             assertFalse(m.format("stations.found", 0, "x").startsWith("!"), language.code());
         }
     }

@@ -1,6 +1,6 @@
 package eu.amadeos.apps.audio.ui.rack.webradio;
 
-import static eu.amadeos.apps.audio.i18n.Texts.tr;
+import static eu.amadeos.commons.i18n.Texts.tr;
 
 import eu.amadeos.apps.audio.ui.widget.DotMatrixDisplay;
 import eu.amadeos.apps.audio.ui.widget.LcdPalette;

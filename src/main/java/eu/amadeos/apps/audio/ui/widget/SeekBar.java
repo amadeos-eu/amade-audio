@@ -1,6 +1,6 @@
 package eu.amadeos.apps.audio.ui.widget;
 
-import static eu.amadeos.apps.audio.i18n.Texts.tr;
+import static eu.amadeos.commons.i18n.Texts.tr;
 
 import eu.amadeos.commons.swing.AmadeUI;
 import eu.amadeos.commons.theme.DesktopTheme;

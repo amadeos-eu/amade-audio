@@ -1,6 +1,6 @@
 package eu.amadeos.apps.audio.ui.rack.mixer;
 
-import static eu.amadeos.apps.audio.i18n.Texts.tr;
+import static eu.amadeos.commons.i18n.Texts.tr;
 
 import eu.amadeos.apps.audio.domain.SourceId;
 import eu.amadeos.apps.audio.ui.widget.Fader;

@@ -1,6 +1,6 @@
 package eu.amadeos.apps.audio.domain;
 
-import static eu.amadeos.apps.audio.i18n.Texts.tr;
+import static eu.amadeos.commons.i18n.Texts.tr;
 
 import java.util.ArrayList;
 import java.util.List;
