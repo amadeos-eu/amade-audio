@@ -5,6 +5,7 @@ import eu.amadeos.apps.audio.domain.ProxySettings;
 import eu.amadeos.apps.audio.domain.RecordingSettings;
 import eu.amadeos.apps.audio.service.net.NetworkProxy;
 import eu.amadeos.apps.audio.i18n.Texts;
+import eu.amadeos.apps.audio.ui.widget.Scale;
 import eu.amadeos.commons.i18n.LanguageChooser;
 import eu.amadeos.commons.i18n.LocaleSettings;
 import eu.amadeos.commons.i18n.Messages;
@@ -72,14 +73,17 @@ public final class OptionsDialog extends JDialog {
         lcdColor.setSelectedIndex(Math.max(0, java.util.Arrays.asList(LCD_COLORS).indexOf(prefs.lcdColor())));
         lcdColor.setRenderer(translated("options.lcd."));
         category.setRenderer(translated("options.page."));
+        size.addItem(AudioPreferences.AUTO);
         for (int s : AudioPreferences.SIZES) size.addItem(s);
         size.setSelectedItem(prefs.size());
         size.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean selected,
                                                           boolean focus) {
-                return super.getListCellRendererComponent(list, value == null ? "" : tr("options.display.size.value", value),
-                        index, selected, focus);
+                String text = value == null ? ""
+                        : value.equals(AudioPreferences.AUTO) ? tr("options.display.size.auto", Scale.fittingMainScreen())
+                        : tr("options.display.size.value", value);
+                return super.getListCellRendererComponent(list, text, index, selected, focus);
             }
         });
 

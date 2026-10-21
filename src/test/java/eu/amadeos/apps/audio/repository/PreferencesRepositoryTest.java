@@ -24,7 +24,7 @@ class PreferencesRepositoryTest {
         assertEquals("theme", p.lcdColor());
         assertFalse(p.recordingNoticeShown());
         assertEquals(ProxySettings.Mode.SYSTEM, p.proxy().mode());
-        assertEquals(60, p.size());
+        assertEquals(AudioPreferences.AUTO, p.size());
     }
 
     @Test
@@ -58,6 +58,7 @@ class PreferencesRepositoryTest {
     void sizeIsOneOfTheOfferedOnes() {
         assertEquals(100, AudioPreferences.defaults(dir).withSize(140).size());
         assertEquals(80, AudioPreferences.defaults(dir).withSize(75).size());
-        assertEquals(60, AudioPreferences.defaults(dir).withSize(0).size());
+        assertEquals(60, AudioPreferences.defaults(dir).withSize(10).size());
+        assertEquals(AudioPreferences.AUTO, AudioPreferences.defaults(dir).withSize(0).size());
     }
 }

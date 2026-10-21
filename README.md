@@ -31,9 +31,11 @@ Pressing Play on one device stops the others.
 
 ### Size
 
-The racks are drawn at 60 % of their original size, so the window fits on smaller screens (about
-880 × 730 pixels instead of 1320 × 1030). *Settings... → Display → Rack size* offers 60, 80 and 100 %;
-the new size is used from the next start. Texts shrink with the racks but stay at least 9 pixels high,
+By default the size of the racks is chosen at each start to fit the screen: the largest of 60, 80 and
+100 % whose window (about 880 × 730, 1080 × 880 or 1320 × 1030 pixels) takes at most 90 % of the
+screen without its panels. A Full HD screen gets 80 %, a laptop with 768 lines 60 %, a 2560 × 1440
+screen 100 %. *Settings... → Display → Rack size* offers "Automatic" and the fixed sizes 60, 80 and
+100 %; the new size is used from the next start. Texts shrink with the racks but stay at least 9 pixels high,
 and the lists in the playlist panel (files, CD tracks, stations) keep their normal text size.
 
 ### Colours

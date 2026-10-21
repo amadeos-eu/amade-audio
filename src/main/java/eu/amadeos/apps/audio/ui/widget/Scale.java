@@ -12,7 +12,8 @@ import java.awt.event.ContainerEvent;
  * Texts shrink with them, but not below {@link #MIN_FONT} so they stay readable. Lists and tables in
  * scroll panes (the playlist, station list) and dialogs keep their normal size.
  *
- * <p>Set once at start-up, before the racks are built; a change takes effect at the next start.
+ * <p>Set once at start-up, before the racks are built; a change takes effect at the next start. The size
+ * "automatic" is chosen from the screen with {@link #fitting}.
  */
 public final class Scale {
     /** Smallest text size in pixels the racks use. */
@@ -24,12 +25,45 @@ public final class Scale {
 
     private static volatile float factor = 1f;
 
+    /** Width and height of the window with all racks and the playlist, at 60, 80 and 100 % (measured). */
+    private static final int[][] WINDOW = {{60, 878, 734}, {80, 1084, 876}, {100, 1317, 1029}};
+    /** Part of the usable screen an automatically sized window takes at most, so there is room around it. */
+    static final double SCREEN_SHARE = 0.9;
+
     private Scale() {
     }
 
     /** The size of the racks, 50 to 100 percent. */
     public static void setPercent(int percent) {
         factor = Math.max(50, Math.min(100, percent)) / 100f;
+    }
+
+    /**
+     * The largest size whose window takes at most {@link #SCREEN_SHARE} of the usable screen area, or 60 %
+     * when even that is too big.
+     */
+    public static int fitting(int usableWidth, int usableHeight) {
+        int best = WINDOW[0][0];
+        for (int[] w : WINDOW) {
+            if (w[1] <= usableWidth * SCREEN_SHARE && w[2] <= usableHeight * SCREEN_SHARE) best = w[0];
+        }
+        return best;
+    }
+
+    /** {@link #fitting} for the main screen, where the window opens; 60 % without a screen. */
+    public static int fittingMainScreen() {
+        if (GraphicsEnvironment.isHeadless()) return WINDOW[0][0];
+        Rectangle usable = usable(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
+                .getDefaultConfiguration());
+        return fitting(usable.width, usable.height);
+    }
+
+    /** The area of a screen without panels and docks. */
+    public static Rectangle usable(GraphicsConfiguration gc) {
+        Rectangle bounds = gc.getBounds();
+        Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
+        return new Rectangle(bounds.x + insets.left, bounds.y + insets.top,
+                bounds.width - insets.left - insets.right, bounds.height - insets.top - insets.bottom);
     }
 
     public static float factor() {

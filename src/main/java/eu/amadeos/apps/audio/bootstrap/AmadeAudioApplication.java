@@ -1,5 +1,6 @@
 package eu.amadeos.apps.audio.bootstrap;
 
+import eu.amadeos.apps.audio.domain.AudioPreferences;
 import eu.amadeos.apps.audio.repository.PreferencesStore;
 import eu.amadeos.apps.audio.service.net.NetworkProxy;
 import eu.amadeos.apps.audio.ui.main.MainPresenter;
@@ -21,7 +22,8 @@ public final class AmadeAudioApplication {
         NetworkProxy.INSTANCE.install();
         AmadeApplication.launch(APP, injector -> {
             // The racks are built in the presenters' constructors, at the size from the settings.
-            Scale.setPercent(injector.getInstance(PreferencesStore.class).current().size());
+            int size = injector.getInstance(PreferencesStore.class).current().size();
+            Scale.setPercent(size == AudioPreferences.AUTO ? Scale.fittingMainScreen() : size);
             injector.getInstance(MainPresenter.class).start(List.of(args));
         }, new AudioModule());
     }
