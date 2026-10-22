@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
+import eu.amadeos.commons.process.CommandRunner;
 import eu.amadeos.apps.audio.domain.CdToc;
 import eu.amadeos.apps.audio.domain.CdTrack;
 import eu.amadeos.apps.audio.service.engine.PcmSource;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,6 +28,8 @@ import java.util.Optional;
 public final class LibCdioDrive implements CdDrive {
     private static final Logger LOG = LoggerFactory.getLogger(LibCdioDrive.class);
     private static final int LEAD_IN = 150;
+    /** Opening the tray takes a few seconds; a drive that does not answer gets 30. */
+    private static final Duration EJECT_TIMEOUT = Duration.ofSeconds(30);
 
     private final String device;
     private final LibCdio cdio;
@@ -151,13 +155,7 @@ public final class LibCdioDrive implements CdDrive {
                 LOG.debug("libcdio eject failed: {}", e.toString());
             }
         }
-        try {
-            Process p = new ProcessBuilder("eject", device).redirectErrorStream(true).start();
-            if (p.waitFor() != 0) throw new IOException("eject: " + new String(p.getInputStream().readAllBytes()).strip());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException("Interrupted", e);
-        }
+        CommandRunner.system().output(List.of("eject", device), EJECT_TIMEOUT);
     }
 
     private static String nn(String s) {

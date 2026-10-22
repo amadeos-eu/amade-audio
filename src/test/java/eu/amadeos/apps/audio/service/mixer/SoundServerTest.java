@@ -1,5 +1,6 @@
 package eu.amadeos.apps.audio.service.mixer;
 
+import eu.amadeos.commons.process.FinishedProcess;
 import eu.amadeos.apps.audio.domain.OutputDevice;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +44,7 @@ class SoundServerTest {
         List<List<String>> commands = new ArrayList<>();
         SoundServer server = new SoundServer(cmd -> {
             commands.add(cmd);
-            return "Volume: 0.25";
+            return FinishedProcess.printing("Volume: 0.25");
         });
         assertTrue(server.setMasterVolume(0.5));
         assertEquals(SoundServer.Backend.WPCTL, server.backend());
@@ -61,13 +62,15 @@ class SoundServerTest {
         assertFalse(missing.hasMasterVolume());
     }
 
+    // --8<-- [start:fallback]
     @Test
-    void fallsBackToPactlWithoutWpctl() {
+    void fallsBackToPactlWhenWpctlFails() {
         List<List<String>> commands = new ArrayList<>();
         SoundServer server = new SoundServer(cmd -> {
             commands.add(cmd);
-            if (cmd.get(0).equals("wpctl")) throw new IOException("wpctl: not found");
-            return "Volume: front-left: 26214 /  40% / -23.88 dB,   front-right: 26214 /  40% / -23.88 dB";
+            if (cmd.get(0).equals("wpctl")) return FinishedProcess.failing(1, "Could not connect to PipeWire");
+            return FinishedProcess.printing(
+                    "Volume: front-left: 26214 /  40% / -23.88 dB,   front-right: 26214 /  40% / -23.88 dB");
         });
         assertEquals(SoundServer.Backend.PACTL, server.backend());
         assertEquals(0.4, server.masterVolume().getAsDouble(), 1e-9);
@@ -77,4 +80,5 @@ class SoundServerTest {
         assertEquals(List.of("pactl", "set-source-volume", "@DEFAULT_SOURCE@", "20%"), commands.get(commands.size() - 1));
         assertTrue(SoundServer.parsePactlVolume("garbage").isEmpty());
     }
+    // --8<-- [end:fallback]
 }

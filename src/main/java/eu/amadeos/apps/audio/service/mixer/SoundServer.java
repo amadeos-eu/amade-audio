@@ -1,10 +1,12 @@
 package eu.amadeos.apps.audio.service.mixer;
 
+import eu.amadeos.commons.process.CommandRunner;
 import eu.amadeos.apps.audio.domain.OutputDevice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -23,6 +25,8 @@ public final class SoundServer {
     static final String SINK = "@DEFAULT_AUDIO_SINK@";
     static final String SOURCE = "@DEFAULT_AUDIO_SOURCE@";
     private static final Pattern PERCENT = Pattern.compile("(\\d+)%");
+    /** The tools answer in milliseconds; a hanging sound server must not hang the mixer. */
+    private static final Duration TIMEOUT = Duration.ofSeconds(3);
 
     /** Which tool controls the volume. */
     public enum Backend {
@@ -41,6 +45,12 @@ public final class SoundServer {
         this.runner = runner;
     }
 
+    // --8<-- [start:run]
+    private String run(List<String> command) throws IOException {
+        return runner.output(command, TIMEOUT);
+    }
+    // --8<-- [end:run]
+
     /** The tool in use, found on first use. */
     public Backend backend() {
         Backend b = backend;
@@ -54,12 +64,12 @@ public final class SoundServer {
 
     private Backend detect() {
         try {
-            if (parseVolume(runner.run(List.of("wpctl", "get-volume", SINK))).isPresent()) return Backend.WPCTL;
+            if (parseVolume(run(List.of("wpctl", "get-volume", SINK))).isPresent()) return Backend.WPCTL;
         } catch (IOException e) {
             LOG.debug("wpctl not usable: {}", e.toString());
         }
         try {
-            if (parsePactlVolume(runner.run(List.of("pactl", "get-sink-volume", "@DEFAULT_SINK@"))).isPresent()) {
+            if (parsePactlVolume(run(List.of("pactl", "get-sink-volume", "@DEFAULT_SINK@"))).isPresent()) {
                 return Backend.PACTL;
             }
         } catch (IOException e) {
@@ -95,8 +105,8 @@ public final class SoundServer {
     /** The outputs of the sound server; the default one marked. Empty without {@code pactl}. */
     public List<OutputDevice> outputs() {
         try {
-            String defaultSink = runner.run(List.of("pactl", "get-default-sink")).strip();
-            return parseSinks(runner.run(List.of("pactl", "list", "sinks")), defaultSink);
+            String defaultSink = run(List.of("pactl", "get-default-sink")).strip();
+            return parseSinks(run(List.of("pactl", "list", "sinks")), defaultSink);
         } catch (IOException e) {
             LOG.debug("Cannot list outputs: {}", e.toString());
             return List.of();
@@ -106,7 +116,7 @@ public final class SoundServer {
     /** Makes the output the default; the sound server moves running streams there. */
     public void setDefaultOutput(OutputDevice device) {
         try {
-            runner.run(List.of("pactl", "set-default-sink", device.name()));
+            run(List.of("pactl", "set-default-sink", device.name()));
         } catch (IOException e) {
             LOG.warn("Cannot switch output to {}: {}", device.description(), e.toString());
         }
@@ -115,8 +125,8 @@ public final class SoundServer {
     private OptionalDouble volume(boolean sink) {
         try {
             return switch (backend()) {
-                case WPCTL -> parseVolume(runner.run(List.of("wpctl", "get-volume", sink ? SINK : SOURCE)));
-                case PACTL -> parsePactlVolume(runner.run(sink
+                case WPCTL -> parseVolume(run(List.of("wpctl", "get-volume", sink ? SINK : SOURCE)));
+                case PACTL -> parsePactlVolume(run(sink
                         ? List.of("pactl", "get-sink-volume", "@DEFAULT_SINK@")
                         : List.of("pactl", "get-source-volume", "@DEFAULT_SOURCE@")));
                 case NONE -> OptionalDouble.empty();
@@ -132,9 +142,9 @@ public final class SoundServer {
         Backend b = backend();
         try {
             switch (b) {
-                case WPCTL -> runner.run(List.of("wpctl", "set-volume", sink ? SINK : SOURCE,
+                case WPCTL -> run(List.of("wpctl", "set-volume", sink ? SINK : SOURCE,
                         String.format(Locale.ROOT, "%.3f", v)));
-                case PACTL -> runner.run(List.of("pactl", sink ? "set-sink-volume" : "set-source-volume",
+                case PACTL -> run(List.of("pactl", sink ? "set-sink-volume" : "set-source-volume",
                         sink ? "@DEFAULT_SINK@" : "@DEFAULT_SOURCE@", Math.round(v * 100) + "%"));
                 case NONE -> {
                     return false;
