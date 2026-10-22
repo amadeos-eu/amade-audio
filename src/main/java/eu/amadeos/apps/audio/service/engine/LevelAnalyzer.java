@@ -52,12 +52,14 @@ public final class LevelAnalyzer {
         return levels;
     }
 
+    // --8<-- [start:meter]
     /** Peak (0..1 of full scale) to meter position 0..1 on a -40..0 dB scale. */
     static float meter(float peak) {
         if (peak <= 0) return 0;
         double db = 20 * Math.log10(peak);
         return (float) Math.max(0, Math.min(1, (db - FLOOR_DB) / -FLOOR_DB));
     }
+    // --8<-- [end:meter]
 
     private float[] spectrum(float sampleRate) {
         for (int i = 0; i < FFT_SIZE; i++) {

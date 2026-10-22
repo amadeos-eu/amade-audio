@@ -14,15 +14,19 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 class CdTest {
     private static final CdToc TOC = CdToc.of(1, new int[]{150, 15363, 32314, 46592, 63414}, 95462, null);
 
+    // --8<-- [start:disc-id]
     @Test
     void discIdHasTheMusicBrainzForm() {
         String id = DiscId.of(TOC);
         assertEquals(28, id.length());
         assertTrue(id.matches("[A-Za-z0-9._]{27}-"), id);
+        // What libdiscid, MusicBrainz' own library, computes for this table of contents.
+        assertEquals("TRSpskwpCRwj67pwDQEX6V5VJlU-", id);
         assertEquals(id, DiscId.of(CdToc.of(1, new int[]{150, 15363, 32314, 46592, 63414}, 95462, null)));
         assertNotEquals(id, DiscId.of(CdToc.of(1, new int[]{150, 15363, 32314, 46592, 63414}, 95463, null)));
         assertEquals("1+5+95462+150+15363+32314+46592+63414", DiscId.tocString(TOC));
     }
+    // --8<-- [end:disc-id]
 
     @Test
     void enhancedCdsLeaveOutTheDataTrack() {

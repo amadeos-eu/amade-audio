@@ -94,6 +94,7 @@ public final class DecoderFactory {
         }
     }
 
+    // --8<-- [start:pcm16]
     /** Converts to signed 16-bit little-endian PCM at the source's rate and channel count. */
     static AudioInputStream toPcm16(AudioInputStream encoded) {
         AudioFormat base = encoded.getFormat();
@@ -101,11 +102,24 @@ public final class DecoderFactory {
         int channels = base.getChannels() > 0 ? base.getChannels() : 2;
         AudioFormat target = PcmSource.pcm16(rate, channels);
         if (base.matches(target)) return encoded;
+        int bits = base.getSampleSizeInBits();
+        if (!AudioSystem.isConversionSupported(target, base) && bits > 16) {
+            // A decoder that only delivers its own depth, e.g. FLAC at 24 bits: decode at that depth first,
+            // then the JDK's PCM converter makes 16 bits of it. Java Sound does not chain the two by itself.
+            AudioFormat wide = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, rate, bits, channels,
+                    channels * ((bits + 7) / 8), rate, false);
+            if (AudioSystem.isConversionSupported(wide, base)) {
+                return AudioSystem.getAudioInputStream(target, AudioSystem.getAudioInputStream(wide, encoded));
+            }
+        }
         return AudioSystem.getAudioInputStream(target, encoded);
     }
+    // --8<-- [end:pcm16]
 
+    // --8<-- [start:class-loader]
     /** The service providers are found through the context class loader, which virtual threads may lack. */
     private static void withDecoderClassLoader() {
         Thread.currentThread().setContextClassLoader(DecoderFactory.class.getClassLoader());
     }
+    // --8<-- [end:class-loader]
 }

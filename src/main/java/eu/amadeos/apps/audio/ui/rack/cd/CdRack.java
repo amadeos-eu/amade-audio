@@ -9,8 +9,8 @@ import eu.amadeos.apps.audio.ui.widget.DeviceLabel;
 import eu.amadeos.apps.audio.ui.widget.RackPanel;
 import eu.amadeos.apps.audio.ui.widget.Scale;
 import eu.amadeos.apps.audio.ui.widget.SevenSegmentDisplay;
-import eu.amadeos.apps.audio.ui.widget.TransportIcon;
-import eu.amadeos.apps.audio.ui.widget.TransportIcon.Kind;
+import eu.amadeos.commons.swing.TransportButtons;
+import eu.amadeos.commons.swing.TransportGlyph;
 
 import javax.swing.*;
 import java.awt.*;
@@ -39,13 +39,13 @@ public final class CdRack extends RackPanel {
         power.setSelected(true);
         power.addActionListener(e -> p.power(power.isSelected()));
         eject.addActionListener(e -> p.eject());
-        eject.setIcon(new TransportIcon(Kind.EJECT));
+        eject.setIcon(Scale.transport().icon(TransportGlyph.EJECT));
         eject.setHorizontalTextPosition(SwingConstants.LEFT);
-        previous = TransportIcon.button(Kind.PREVIOUS, p::previous);
-        stop = TransportIcon.button(Kind.STOP, p::stop);
-        play = TransportIcon.button(Kind.PLAY, p::play);
-        pause = TransportIcon.button(Kind.PAUSE, p::pause);
-        next = TransportIcon.button(Kind.NEXT, p::next);
+        previous = Scale.transport().button(TransportGlyph.PREVIOUS, p::previous);
+        stop = Scale.transport().button(TransportGlyph.STOP, p::stop);
+        play = Scale.transport().button(TransportGlyph.PLAY, p::play);
+        pause = Scale.transport().button(TransportGlyph.PAUSE, p::pause);
+        next = Scale.transport().button(TransportGlyph.NEXT, p::next);
 
         JPanel info = RackPanel.infoWindow(new BorderLayout(Scale.px(14), 0));
         JPanel text = new JPanel();
@@ -85,7 +85,7 @@ public final class CdRack extends RackPanel {
 
         JPanel transportWrap = new JPanel(new GridBagLayout());
         transportWrap.setOpaque(false);
-        transportWrap.add(TransportIcon.bar(previous, stop, play, pause, next));
+        transportWrap.add(TransportButtons.bar(previous, stop, play, pause, next));
 
         add(RackPanel.sideButtons(power, eject), BorderLayout.WEST);
         add(center, BorderLayout.CENTER);

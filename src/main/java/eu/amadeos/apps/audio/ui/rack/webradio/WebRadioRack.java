@@ -11,8 +11,8 @@ import eu.amadeos.apps.audio.ui.widget.DeviceLabel;
 import eu.amadeos.apps.audio.ui.widget.RackPanel;
 import eu.amadeos.apps.audio.ui.widget.Scale;
 import eu.amadeos.apps.audio.ui.widget.Widget;
-import eu.amadeos.apps.audio.ui.widget.TransportIcon;
-import eu.amadeos.apps.audio.ui.widget.TransportIcon.Kind;
+import eu.amadeos.commons.swing.TransportButtons;
+import eu.amadeos.commons.swing.TransportGlyph;
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,7 +31,7 @@ public final class WebRadioRack extends RackPanel {
     final JButton previous;
     final JButton stop;
     final JButton play;
-    final JToggleButton record = TransportIcon.toggle(Kind.RECORD);
+    final JToggleButton record = Scale.transport().toggle(TransportGlyph.RECORD);
     final JButton next;
 
     WebRadioRack(WebRadioPresenter p) {
@@ -41,10 +41,10 @@ public final class WebRadioRack extends RackPanel {
         power.addActionListener(e -> p.power(power.isSelected()));
         stations.addActionListener(e -> p.showStations());
         stations.setToolTipText(tr("radio.stations.tooltip"));
-        previous = TransportIcon.button(Kind.PREVIOUS, p::previous);
-        stop = TransportIcon.button(Kind.STOP, p::stop);
-        play = TransportIcon.button(Kind.PLAY, p::play);
-        next = TransportIcon.button(Kind.NEXT, p::next);
+        previous = Scale.transport().button(TransportGlyph.PREVIOUS, p::previous);
+        stop = Scale.transport().button(TransportGlyph.STOP, p::stop);
+        play = Scale.transport().button(TransportGlyph.PLAY, p::play);
+        next = Scale.transport().button(TransportGlyph.NEXT, p::next);
         record.addActionListener(e -> p.record(record.isSelected()));
         record.setToolTipText(tr("radio.record.tooltip"));
         record.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -79,7 +79,7 @@ public final class WebRadioRack extends RackPanel {
 
         JPanel transportWrap = new JPanel(new GridBagLayout());
         transportWrap.setOpaque(false);
-        transportWrap.add(TransportIcon.bar(previous, stop, play, record, next));
+        transportWrap.add(TransportButtons.bar(previous, stop, play, record, next));
 
         add(RackPanel.sideButtons(power, stations), BorderLayout.WEST);
         add(lcd, BorderLayout.CENTER);

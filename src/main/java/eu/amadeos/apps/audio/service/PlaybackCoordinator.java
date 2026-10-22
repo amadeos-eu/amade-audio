@@ -33,6 +33,7 @@ public final class PlaybackCoordinator {
         listeners.add(listener);
     }
 
+    // --8<-- [start:activate]
     /** Makes the device active and stops the others. */
     public void activate(SourceId id) {
         for (SourceId other : SourceId.values()) {
@@ -43,6 +44,7 @@ public final class PlaybackCoordinator {
             listeners.forEach(l -> l.accept(id));
         }
     }
+    // --8<-- [end:activate]
 
     /** Shows a device's list without playing, e.g. when a CD is inserted and nothing else plays. */
     public void select(SourceId id) {

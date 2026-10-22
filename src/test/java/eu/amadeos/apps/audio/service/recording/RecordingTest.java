@@ -86,6 +86,7 @@ class RecordingTest {
         assertFalse(recorder.isRecording());
     }
 
+    // --8<-- [start:split]
     @Test
     void splitsAtTheNextFrameAfterATitleChange() throws Exception {
         StreamRecorder recorder = new StreamRecorder(new RecordingSettings(dir, "{title}", true, 0), "S",
@@ -104,6 +105,7 @@ class RecordingTest {
         assertEquals(100, second.length);
         assertEquals((byte) 0xFF, second[0]);
     }
+    // --8<-- [end:split]
 
     @Test
     void oggIsNeverSplit() throws Exception {

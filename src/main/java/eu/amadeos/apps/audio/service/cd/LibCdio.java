@@ -3,6 +3,7 @@ package eu.amadeos.apps.audio.service.cd;
 import com.sun.jna.Library;
 import com.sun.jna.Pointer;
 
+// --8<-- [start:functions]
 /** The parts of libcdio (libcdio.so.19) amade-audio uses, mapped with JNA. */
 interface LibCdio extends Library {
     int DRIVER_UNKNOWN = 0;
@@ -33,3 +34,4 @@ interface LibCdio extends Library {
 
     int cdio_eject_media_drive(String device);
 }
+// --8<-- [end:functions]

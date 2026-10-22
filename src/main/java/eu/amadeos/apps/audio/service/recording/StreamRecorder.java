@@ -98,6 +98,7 @@ public final class StreamRecorder {
         }
     }
 
+    // --8<-- [start:write]
     /** Appends stream data; splits at the next frame if a title change is pending. */
     public synchronized void write(byte[] data, int offset, int length) {
         if (!recording) return;
@@ -132,6 +133,7 @@ public final class StreamRecorder {
             listener.stopped(tr("recording.failed", e.getMessage()), files);
         }
     }
+    // --8<-- [end:write]
 
     /** Ends the recording; returns the files written. */
     public synchronized List<Path> stop() {
@@ -170,6 +172,7 @@ public final class StreamRecorder {
         bytes += length;
     }
 
+    // --8<-- [start:close-file]
     private void closeFile() throws IOException {
         if (out == null) return;
         out.close();
@@ -190,4 +193,5 @@ public final class StreamRecorder {
             }
         }
     }
+    // --8<-- [end:close-file]
 }

@@ -29,7 +29,7 @@ class TranslationTest {
                 "options.lcd.white", "stations.tab.favorites", "stations.tab.search", "stations.tab.genres",
                 "stations.tab.countries", "transport.previous", "transport.next", "transport.rewind",
                 "transport.forward", "transport.stop", "transport.play", "transport.pause", "transport.record",
-                "transport.eject", "transport.favorite");
+                "transport.eject");
         for (String key : keys) assertTrue(english.has(key), key);
     }
 

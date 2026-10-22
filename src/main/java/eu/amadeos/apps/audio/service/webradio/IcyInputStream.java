@@ -33,6 +33,7 @@ public final class IcyInputStream extends FilterInputStream {
         return n <= 0 ? -1 : one[0] & 0xFF;
     }
 
+    // --8<-- [start:read]
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
         if (metaint <= 0) return super.read(b, off, len);
@@ -44,6 +45,7 @@ public final class IcyInputStream extends FilterInputStream {
         if (read > 0) bytesUntilMetadata -= read;
         return read;
     }
+    // --8<-- [end:read]
 
     @Override
     public long skip(long n) throws IOException {
@@ -75,6 +77,7 @@ public final class IcyInputStream extends FilterInputStream {
         }
     }
 
+    // --8<-- [start:title]
     /** {@code StreamTitle='Artist - Title';StreamUrl='';} gives {@code Artist - Title}; null if none. */
     static String streamTitle(String metadata) {
         String key = "StreamTitle='";
@@ -87,4 +90,5 @@ public final class IcyInputStream extends FilterInputStream {
         String title = metadata.substring(start, end).strip();
         return title.isEmpty() ? null : title;
     }
+    // --8<-- [end:title]
 }

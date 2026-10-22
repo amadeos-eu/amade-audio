@@ -4,6 +4,7 @@ import javax.sound.sampled.AudioFormat;
 import java.io.Closeable;
 import java.io.IOException;
 
+// --8<-- [start:source]
 /**
  * Decoded audio: signed 16-bit little-endian PCM in {@link #format()}. Implementations are read by one
  * thread at a time.
@@ -14,6 +15,7 @@ public interface PcmSource extends Closeable {
 
     /** Reads whole frames; returns -1 at the end. Blocks while a network stream is buffering. */
     int read(byte[] buffer, int offset, int length) throws IOException;
+// --8<-- [end:source]
 
     /** Total length in frames, or -1 if unknown (streams). */
     default long frameLength() {

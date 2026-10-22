@@ -2,8 +2,8 @@ package eu.amadeos.apps.audio.service.metadata;
 
 import eu.amadeos.apps.audio.domain.AlbumInfo;
 import eu.amadeos.apps.audio.domain.CdToc;
-import eu.amadeos.apps.audio.service.Json;
 import eu.amadeos.apps.audio.service.cd.DiscId;
+import eu.amadeos.commons.json.Json;
 
 import java.io.IOException;
 import java.net.URI;
@@ -39,6 +39,7 @@ public final class MusicBrainzClient {
         return parse(new String(body.get(), StandardCharsets.UTF_8), discId, audioTracks);
     }
 
+    // --8<-- [start:request]
     private synchronized Optional<byte[]> request(URI uri) throws IOException {
         long wait = lastRequest + 1100 - System.currentTimeMillis();
         if (wait > 0) {
@@ -55,6 +56,7 @@ public final class MusicBrainzClient {
             lastRequest = System.currentTimeMillis();
         }
     }
+    // --8<-- [end:request]
 
     static List<AlbumInfo> parse(String json, String discId, int audioTracks) {
         Object root = Json.parse(json);

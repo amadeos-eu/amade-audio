@@ -7,6 +7,7 @@ final class FrameSync {
     private FrameSync() {
     }
 
+    // --8<-- [start:find]
     /** Offset of the first frame header in {@code data[from, to)}, or -1. */
     static int find(byte[] data, int from, int to, StreamCodec codec) {
         for (int i = from; i + 3 < to; i++) {
@@ -27,4 +28,5 @@ final class FrameSync {
         }
         return -1;
     }
+    // --8<-- [end:find]
 }

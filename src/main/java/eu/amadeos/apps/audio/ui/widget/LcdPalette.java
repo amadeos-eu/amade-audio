@@ -46,6 +46,7 @@ public final class LcdPalette {
         return fixed != null ? fixed : forTheme(AmadeUI.theme());
     }
 
+    // --8<-- [start:theme]
     static Color forTheme(DesktopTheme theme) {
         return switch (theme.id()) {
             case "cde-desert" -> FIXED.get("amber");
@@ -53,6 +54,7 @@ public final class LcdPalette {
             default -> FIXED.get("green");
         };
     }
+    // --8<-- [end:theme]
 
     /** Unlit segments and dots: the glow colour faintly on black. */
     public static Color ghost(Color glow) {

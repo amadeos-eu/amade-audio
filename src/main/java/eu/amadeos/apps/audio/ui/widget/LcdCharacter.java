@@ -12,6 +12,7 @@ enum LcdCharacter {
         "     ",
         "     ",
         "     "),
+    // --8<-- [start:letter]
     A('A',
         " XXX ",
         "X   X",
@@ -20,6 +21,7 @@ enum LcdCharacter {
         "X   X",
         "X   X",
         "X   X"),
+    // --8<-- [end:letter]
     B('B',
         "XXXX ",
         "X   X",
@@ -808,6 +810,7 @@ enum LcdCharacter {
     private final char ch;
     private final byte[] cols;
 
+    // --8<-- [start:rows]
     LcdCharacter(char ch, String... rows) {
         this.ch = ch;
         this.cols = new byte[5];
@@ -821,6 +824,7 @@ enum LcdCharacter {
             }
         }
     }
+    // --8<-- [end:rows]
 
     char character() {
         return ch;
