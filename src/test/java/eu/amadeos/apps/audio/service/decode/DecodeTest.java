@@ -44,6 +44,30 @@ class DecodeTest {
         }
     }
 
+    // --8<-- [start:flac24]
+    /** Found by the screenshots: Java Sound has no direct way from 24-bit FLAC to 16-bit PCM. */
+    @Test
+    void decodesHighResolutionFlac() throws Exception {
+        Path flac = dir.resolve("tone-24bit.flac");
+        try (var in = DecodeTest.class.getResourceAsStream("tone-24bit.flac")) {
+            Files.copy(in, flac);
+        }
+        try (PcmSource source = new DecoderFactory().openFile(flac)) {
+            assertTrue(PcmSource.pcm16(44100f, 1).matches(source.format()), source.format().toString());
+            byte[] buffer = new byte[44100];
+            int peak = 0;
+            long total = 0;
+            int n;
+            while ((n = source.read(buffer, 0, buffer.length)) >= 0) {
+                total += n;
+                for (int i = 0; i + 1 < n; i += 2) peak = Math.max(peak, Math.abs((short) ((buffer[i] & 0xFF) | (buffer[i + 1] << 8))));
+            }
+            assertEquals(11025 * 2, total);  // a quarter of a second
+            assertEquals(2048, peak, 50);    // the 1 kHz tone at 1/16 of full scale
+        }
+    }
+    // --8<-- [end:flac24]
+
     @Test
     void unsupportedFilesFailClearly() throws Exception {
         Path junk = dir.resolve("junk.mp3");
