@@ -151,6 +151,7 @@ public final class RadioSession implements Closeable {
         buffer.markFinished();
     }
 
+    // --8<-- [start:deliver]
     private boolean deliver(byte[] data, int offset, int length) {
         if (length <= 0) return true;
         Tap t = tap;
@@ -163,6 +164,7 @@ public final class RadioSession implements Closeable {
         }
         return false;
     }
+    // --8<-- [end:deliver]
 
     private void title(String title) {
         lastTitle = title;

@@ -81,6 +81,7 @@ public final class DotMatrixDisplay extends Widget {
         repaint();
     }
 
+    // --8<-- [start:paint]
     @Override
     protected void paintComponent(Graphics g) {
         Color on = LcdPanel.colorFor(this);
@@ -102,6 +103,7 @@ public final class DotMatrixDisplay extends Widget {
             }
         }
     }
+    // --8<-- [end:paint]
 
     static byte[] glyph(char c) {
         byte[] g = known(c);

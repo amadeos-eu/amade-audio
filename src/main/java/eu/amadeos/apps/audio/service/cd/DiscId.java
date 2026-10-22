@@ -20,6 +20,7 @@ public final class DiscId {
     private DiscId() {
     }
 
+    // --8<-- [start:of]
     /** The 28-character disc ID. */
     public static String of(CdToc toc) {
         Audio a = audio(toc);
@@ -37,6 +38,7 @@ public final class DiscId {
             throw new IllegalStateException("SHA-1 missing", e);
         }
     }
+    // --8<-- [end:of]
 
     /** {@code first last leadout offset1 offset2 ...} joined with {@code +}, for the {@code toc} lookup. */
     public static String tocString(CdToc toc) {

@@ -19,6 +19,7 @@ public final class SineSource implements PcmSource {
         return PcmSource.pcm16(44100f, 2);
     }
 
+    // --8<-- [start:read]
     @Override
     public int read(byte[] buffer, int offset, int length) {
         if (frame >= totalFrames) return -1;
@@ -34,6 +35,7 @@ public final class SineSource implements PcmSource {
         frame += frames;
         return frames * 4;
     }
+    // --8<-- [end:read]
 
     @Override
     public long frameLength() {

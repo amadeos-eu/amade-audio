@@ -80,6 +80,7 @@ class AudioChannelTest {
         assertEquals(0, maxSample(outputs.created.get(2).written.toByteArray()));
     }
 
+    // --8<-- [start:stop-not-finished]
     @Test
     void stopIsNotFinished() throws Exception {
         FakeOutput.Factory outputs = new FakeOutput.Factory(true);
@@ -105,6 +106,7 @@ class AudioChannelTest {
         assertEquals(0, finished.get());
         assertEquals(TransportState.STOPPED, channel.state());
     }
+    // --8<-- [end:stop-not-finished]
 
     @Test
     void reportsErrors() throws Exception {

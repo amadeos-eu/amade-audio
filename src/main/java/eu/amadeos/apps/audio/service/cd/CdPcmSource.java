@@ -39,6 +39,7 @@ final class CdPcmSource implements PcmSource {
         return FORMAT;
     }
 
+    // --8<-- [start:read]
     @Override
     public int read(byte[] buffer, int offset, int length) throws IOException {
         if (chunkPos >= chunkLength) {
@@ -54,6 +55,7 @@ final class CdPcmSource implements PcmSource {
         chunkPos += n;
         return n;
     }
+    // --8<-- [end:read]
 
     @Override
     public long frameLength() {

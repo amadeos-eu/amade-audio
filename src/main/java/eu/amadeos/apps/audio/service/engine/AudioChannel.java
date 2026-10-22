@@ -77,6 +77,7 @@ public final class AudioChannel {
         return state;
     }
 
+    // --8<-- [start:play]
     /**
      * Stops what is playing and plays the source; the channel closes it when done.
      *
@@ -89,6 +90,7 @@ public final class AudioChannel {
         fireState(playback, TransportState.LOADING, null);
         Thread.ofVirtual().name("amade-audio-" + id.name().toLowerCase()).start(playback);
     }
+    // --8<-- [end:play]
 
     /** Pauses; the output keeps its queued samples. */
     public synchronized void pause() {
@@ -129,6 +131,7 @@ public final class AudioChannel {
         return current == playback;
     }
 
+    // --8<-- [start:stale]
     private void fireState(Playback playback, TransportState newState, String message) {
         if (!isCurrent(playback)) return;
         state = newState;
@@ -140,6 +143,7 @@ public final class AudioChannel {
             }
         }
     }
+    // --8<-- [end:stale]
 
     private void fireLevels(Playback playback, AudioLevels levels) {
         if (!isCurrent(playback)) return;
@@ -163,6 +167,7 @@ public final class AudioChannel {
         }
     }
 
+    // --8<-- [start:gain]
     /** Amplitude factor for a fader position: roughly logarithmic, 0.5 is about -12 dB. */
     static float amplitude(float fader) {
         return fader * fader;
@@ -180,6 +185,7 @@ public final class AudioChannel {
             buffer[i + 1] = (byte) (v >> 8);
         }
     }
+    // --8<-- [end:gain]
 
     /** Keeps the first two channels of each frame; returns the new length. */
     static int downmixToStereo(byte[] in, int length, int channels, byte[] out) {
@@ -224,6 +230,7 @@ public final class AudioChannel {
             fireState(this, value ? TransportState.PAUSED : TransportState.PLAYING, null);
         }
 
+        // --8<-- [start:cancel]
         void cancel() {
             cancelled = true;
             synchronized (lock) {
@@ -244,6 +251,7 @@ public final class AudioChannel {
                 LOG.debug("Closing source failed", e);
             }
         }
+        // --8<-- [end:cancel]
 
         @Override
         public void run() {
@@ -262,6 +270,7 @@ public final class AudioChannel {
                 fireState(this, TransportState.PLAYING, null);
                 byte[] buffer = new byte[in.getFrameSize() * 2048];
                 byte[] stereo = channels > 2 ? new byte[4 * 2048] : null;
+                // --8<-- [start:loop]
                 while (!cancelled) {
                     synchronized (lock) {
                         while (paused && !cancelled) lock.wait();
@@ -291,6 +300,7 @@ public final class AudioChannel {
                         written += w;
                     }
                 }
+                // --8<-- [end:loop]
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (IOException | RuntimeException e) {

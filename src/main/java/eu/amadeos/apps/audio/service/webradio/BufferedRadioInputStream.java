@@ -24,6 +24,7 @@ public final class BufferedRadioInputStream extends InputStream {
         this.prebufferChunks = prebufferChunks;
     }
 
+    // --8<-- [start:push]
     /** Adds a chunk; waits up to 5 s while the buffer is full. False if closed or still full. */
     public boolean push(byte[] chunk) {
         if (closed) return false;
@@ -34,6 +35,7 @@ public final class BufferedRadioInputStream extends InputStream {
             return false;
         }
     }
+    // --8<-- [end:push]
 
     /** No more chunks will come: the reader gets the end of the stream once the buffer is empty. */
     public void markFinished() {
