@@ -45,9 +45,11 @@ public final class SoundServer {
         this.runner = runner;
     }
 
+    // --8<-- [start:run]
     private String run(List<String> command) throws IOException {
         return runner.output(command, TIMEOUT);
     }
+    // --8<-- [end:run]
 
     /** The tool in use, found on first use. */
     public Backend backend() {

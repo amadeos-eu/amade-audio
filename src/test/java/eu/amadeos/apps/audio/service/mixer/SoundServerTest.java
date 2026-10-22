@@ -62,6 +62,7 @@ class SoundServerTest {
         assertFalse(missing.hasMasterVolume());
     }
 
+    // --8<-- [start:fallback]
     @Test
     void fallsBackToPactlWhenWpctlFails() {
         List<List<String>> commands = new ArrayList<>();
@@ -79,4 +80,5 @@ class SoundServerTest {
         assertEquals(List.of("pactl", "set-source-volume", "@DEFAULT_SOURCE@", "20%"), commands.get(commands.size() - 1));
         assertTrue(SoundServer.parsePactlVolume("garbage").isEmpty());
     }
+    // --8<-- [end:fallback]
 }
