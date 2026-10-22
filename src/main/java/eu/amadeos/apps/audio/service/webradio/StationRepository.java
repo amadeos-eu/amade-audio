@@ -2,8 +2,8 @@ package eu.amadeos.apps.audio.service.webradio;
 
 import com.google.inject.Inject;
 import eu.amadeos.apps.audio.domain.Station;
-import eu.amadeos.apps.audio.service.Json;
 import eu.amadeos.commons.config.AppDirectories;
+import eu.amadeos.commons.json.Json;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

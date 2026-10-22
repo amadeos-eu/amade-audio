@@ -119,11 +119,13 @@ only the CD rack uses native code through JNA: libcdio on Linux, kernel32 IOCTLs
 | `service.metadata` | `MusicBrainzClient`, `CdMetadataService`, `ArtworkService`, `MetadataCache` |
 | `service.mixer` | `SoundServer`: master, microphone and output through `wpctl` / `pactl` |
 | `service.net` | `NetworkProxy`: proxy selector and authenticator for all connections (system, none, manual) |
-| `service` | `PlaybackCoordinator` (active device), `Json` |
+| `service` | `PlaybackCoordinator` (active device) |
 | `ui.main` | frameless `MainWindow`, `HeaderRack`, `MainPresenter` |
 | `ui.rack.mixer`, `.cd`, `.player`, `.webradio` | rack panel, playlist view and presenter per device |
 | `ui.playlist` | `PlaylistPanel`, `CoverColumn` |
-| `ui.widget` | `Scale` (rack size), `SevenSegmentDisplay`, `DotMatrixDisplay` (5×7 font from dz-radio), `Fader`, `LevelMeter`, `SpectrumMeter`, `SeekBar`, `CoverView`, `TransportIcon`, `Led`, `RackPanel`, `RackRail`, `LcdPanel` |
+| `ui.widget` | `Scale` (rack size), `SevenSegmentDisplay`, `DotMatrixDisplay` (5×7 font from dz-radio), `Fader`, `LevelMeter`, `SpectrumMeter`, `SeekBar`, `CoverView`, `Led`, `RackPanel`, `RackRail`, `LcdPanel` |
+
+`Json` and the transport buttons (`TransportGlyph`, `TransportButtons`) come from amade-commons.
 
 Presenters run on the EDT; drive, decoder and network work runs on virtual threads and returns
 through `EdtExecutor`. Audio events (state, levels, end of track) arrive on the audio threads and are

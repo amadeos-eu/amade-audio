@@ -1,5 +1,7 @@
 package eu.amadeos.apps.audio.ui.widget;
 
+import eu.amadeos.commons.swing.TransportButtons;
+
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.text.JTextComponent;
@@ -80,6 +82,13 @@ public final class Scale {
     public static float px(float value) {
         return value * factor;
     }
+
+    // --8<-- [start:transport]
+    /** Transport buttons and symbols at the size of the racks. */
+    public static TransportButtons transport() {
+        return new TransportButtons(factor);
+    }
+    // --8<-- [end:transport]
 
     public static Dimension size(int width, int height) {
         return new Dimension(px(width), px(height));
