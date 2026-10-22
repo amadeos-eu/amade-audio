@@ -28,14 +28,14 @@ public final class CoverColumn extends JPanel {
         JPanel text = new JPanel();
         text.setOpaque(false);
         text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
-        for (JLabel l : new JLabel[]{line1, line2, line3}) {
+        // One column, so that when the panel is short (small rack sizes) the last line is cut off
+        // instead of being drawn over the details.
+        for (JLabel l : new JLabel[]{line1, line2, line3, source}) {
             l.setAlignmentX(LEFT_ALIGNMENT);
             text.add(l);
-            text.add(Box.createVerticalStrut(Scale.px(2)));
         }
         add(cover, BorderLayout.NORTH);
         add(text, BorderLayout.CENTER);
-        add(source, BorderLayout.SOUTH);
         setPreferredSize(new Dimension(Scale.px(SIZE), 10));
     }
 
