@@ -6,7 +6,7 @@ hardware-like players of the 1990s and drawn in the colours of the current amade
 
 [![License](https://img.shields.io/badge/license-EUPL--1.2-blue)](LICENSE) ![Java](https://img.shields.io/badge/Java-25-orange) ![Debian](https://img.shields.io/badge/Debian-package-red)
 
-> Status: early development (0.1.0).
+> Status: early development.
 
 ![Audio Station in the CDE Desert theme](docs/screenshot-desert.png)
 
@@ -142,7 +142,7 @@ Requirements: Java 25 JDK; `dpkg-deb` for the Debian package.
 ./gradlew test                 # unit tests (run under Xvfb in CI)
 ./gradlew run                  # start the Audio Station
 ./gradlew run --args="~/Music/Album"
-./gradlew deb                  # build/distributions/amade-audio_0.1.0_all.deb
+./gradlew deb                  # build/distributions/amade-audio_0.0.0~dev.0_all.deb
 ./gradlew installToAmadeOs     # copy the .deb into ../amadeos/config/packages.chroot/
 ```
 
@@ -170,7 +170,7 @@ users need no Java. It runs only on Windows; MSI and EXE also need
 [WiX Toolset 3](https://github.com/wixtoolset/wix3/releases) on the `PATH` (JDK 25 also takes WiX 4/5).
 
 ```bat
-gradlew windowsInstaller                            :: build\windows\msi\amade-audio-0.1.0.msi
+gradlew windowsInstaller                            :: build\windows\msi\amade-audio-0.0.0.msi
 gradlew windowsInstaller -PinstallerType=exe        :: setup .exe
 gradlew windowsInstaller -PinstallerType=app-image  :: folder with amade-audio.exe, no WiX needed
 ```
