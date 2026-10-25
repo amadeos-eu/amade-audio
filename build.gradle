@@ -4,7 +4,11 @@ plugins {
 }
 
 group = 'eu.amadeos'
-version = '0.1.0'
+// CI computes the version from the Conventional Commits since the last release tag and passes it as
+// -PappVersion (datazuul/amadeos-ci scripts/next-version.sh); a build without it is a local development build.
+version = findProperty('appVersion') ?: '0.0.0-dev.0'
+// Debian sorts 1.1.0~dev.57 before 1.1.0 (with - it would sort after it).
+def debVersion = version.toString().replace('-', '~')
 
 def mainClassName = 'eu.amadeos.apps.audio.bootstrap.AmadeAudioApplication'
 
@@ -173,7 +177,7 @@ exec /usr/bin/java --add-exports java.desktop/com.sun.media.sound=ALL-UNNAMED -j
         }
 
         new File(debianDir, 'control').text = """Package: amade-audio
-Version: ${project.version}
+Version: ${debVersion}
 Section: sound
 Priority: optional
 Architecture: all
@@ -187,7 +191,7 @@ Description: Rack-style audio station for amadeOS
  cover art from MusicBrainz / Cover Art Archive and stream recording.
 """
 
-        def debFile = new File(distDir, "amade-audio_${project.version}_all.deb")
+        def debFile = new File(distDir, "amade-audio_${debVersion}_all.deb")
         def process = new ProcessBuilder('dpkg-deb', '--root-owner-group', '--build',
                 stagingDir.absolutePath, debFile.absolutePath)
                 .redirectErrorStream(true)
@@ -208,7 +212,7 @@ tasks.register('installToAmadeOs') {
     doLast {
         def targetDir = file('../amadeos/config/packages.chroot')
         targetDir.mkdirs()
-        def debFile = new File(layout.buildDirectory.get().asFile, "distributions/amade-audio_${project.version}_all.deb")
+        def debFile = new File(layout.buildDirectory.get().asFile, "distributions/amade-audio_${debVersion}_all.deb")
         copy {
             from debFile
             into targetDir
@@ -247,7 +251,7 @@ tasks.register('windowsInstaller') {
         def args = [jpackage.absolutePath,
                     '--type', type,
                     '--name', 'amade-audio',
-                    // MSI versions are numeric only: 0.1.0-SNAPSHOT becomes 0.1.0
+                    // MSI versions are numeric only: 1.1.0-dev.57 becomes 1.1.0
                     '--app-version', project.version.toString().replaceAll(/[^0-9.].*$/, ''),
                     '--vendor', 'datazuul',
                     '--description', 'Rack-style player for audio CDs, music files and internet radio',
