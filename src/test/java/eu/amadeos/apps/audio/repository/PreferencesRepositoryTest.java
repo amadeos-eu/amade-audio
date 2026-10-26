@@ -1,7 +1,7 @@
 package eu.amadeos.apps.audio.repository;
 
 import eu.amadeos.apps.audio.domain.AudioPreferences;
-import eu.amadeos.apps.audio.domain.ProxySettings;
+import eu.amadeos.commons.net.ProxySettings;
 import eu.amadeos.apps.audio.domain.RecordingSettings;
 import eu.amadeos.apps.audio.domain.SourceId;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,6 @@ class PreferencesRepositoryTest {
         assertEquals(dir.resolve("Music/Radio"), p.recording().directory());
         assertEquals("theme", p.lcdColor());
         assertFalse(p.recordingNoticeShown());
-        assertEquals(ProxySettings.Mode.SYSTEM, p.proxy().mode());
         assertEquals(AudioPreferences.AUTO, p.size());
     }
 
@@ -38,7 +37,6 @@ class PreferencesRepositoryTest {
                 .withLcdColor("amber")
                 .withRecordingNoticeShown()
                 .withLastFolder(dir.resolve("music"))
-                .withProxy(new ProxySettings(ProxySettings.Mode.MANUAL, "proxy.example", 8080, "ralf", "localhost, .lan"))
                 .withSize(80);
         repo.save(p);
         AudioPreferences loaded = repo.load();
@@ -50,8 +48,21 @@ class PreferencesRepositoryTest {
         assertEquals("amber", loaded.lcdColor());
         assertTrue(loaded.recordingNoticeShown());
         assertEquals(dir.resolve("music"), loaded.lastFolder());
-        assertEquals(p.proxy(), loaded.proxy());
         assertEquals(80, loaded.size());
+    }
+
+    @Test
+    void theProxyOfEarlierVersionsIsReadOnceForSettings() throws Exception {
+        Path file = dir.resolve("audio.conf");
+        PreferencesRepository repo = new PreferencesRepository(file, dir);
+        assertTrue(repo.legacyProxy().isEmpty());
+        java.nio.file.Files.writeString(file, "lcd.color=amber\nproxy.mode=manual\nproxy.host=proxy.example\n"
+                + "proxy.port=8080\nproxy.user=ralf\nproxy.noProxy=localhost, .lan\n");
+        assertEquals(java.util.Optional.of(ProxySettings.manual("proxy.example", 8080, "ralf", "localhost, .lan")),
+                repo.legacyProxy());
+        repo.save(repo.load());
+        assertTrue(repo.legacyProxy().isEmpty(), "saving drops it");
+        assertEquals("amber", repo.load().lcdColor());
     }
 
     @Test

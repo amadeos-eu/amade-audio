@@ -13,12 +13,11 @@ import java.util.Set;
  * @param hiddenRacks rack ids hidden with the rack buttons: {@code mixer}, {@code cd}, {@code player}, {@code webradio}
  * @param lcdColor    {@code theme} or a fixed colour name, see the LCD palette
  * @param lastFolder  last folder opened in the player, may be null
- * @param proxy       network proxy for streams and web services
  * @param size        size of the racks in percent: 60, 80 or 100, or {@link #AUTO}
  */
 public record AudioPreferences(Map<SourceId, Float> volumes, double bassDb, double trebleDb, Set<String> hiddenRacks,
                                RecordingSettings recording, String lcdColor, boolean recordingNoticeShown,
-                               Path lastFolder, ProxySettings proxy, int size) {
+                               Path lastFolder, int size) {
     public AudioPreferences {
         Map<SourceId, Float> v = new EnumMap<>(SourceId.class);
         for (SourceId id : SourceId.values()) v.put(id, 0.8f);
@@ -26,13 +25,12 @@ public record AudioPreferences(Map<SourceId, Float> volumes, double bassDb, doub
         volumes = Map.copyOf(v);
         hiddenRacks = hiddenRacks == null ? Set.of() : Set.copyOf(hiddenRacks);
         lcdColor = lcdColor == null || lcdColor.isBlank() ? "theme" : lcdColor;
-        proxy = proxy == null ? ProxySettings.DEFAULT : proxy;
         size = normalizeSize(size);
     }
 
     public static AudioPreferences defaults(Path home) {
         return new AudioPreferences(null, 0, 0, Set.of(), RecordingSettings.defaults(home), "theme", false, null,
-                ProxySettings.DEFAULT, DEFAULT_SIZE);
+                DEFAULT_SIZE);
     }
 
     /** Size of the racks chosen at each start to fit the screen. */
@@ -56,38 +54,35 @@ public record AudioPreferences(Map<SourceId, Float> volumes, double bassDb, doub
     public AudioPreferences withVolume(SourceId id, float value) {
         Map<SourceId, Float> v = new EnumMap<>(volumes);
         v.put(id, value);
-        return new AudioPreferences(v, bassDb, trebleDb, hiddenRacks, recording, lcdColor, recordingNoticeShown, lastFolder, proxy, size);
+        return new AudioPreferences(v, bassDb, trebleDb, hiddenRacks, recording, lcdColor, recordingNoticeShown, lastFolder, size);
     }
 
     public AudioPreferences withTone(double bass, double treble) {
-        return new AudioPreferences(volumes, bass, treble, hiddenRacks, recording, lcdColor, recordingNoticeShown, lastFolder, proxy, size);
+        return new AudioPreferences(volumes, bass, treble, hiddenRacks, recording, lcdColor, recordingNoticeShown, lastFolder, size);
     }
 
     public AudioPreferences withHiddenRacks(Set<String> racks) {
-        return new AudioPreferences(volumes, bassDb, trebleDb, racks, recording, lcdColor, recordingNoticeShown, lastFolder, proxy, size);
+        return new AudioPreferences(volumes, bassDb, trebleDb, racks, recording, lcdColor, recordingNoticeShown, lastFolder, size);
     }
 
     public AudioPreferences withRecording(RecordingSettings settings) {
-        return new AudioPreferences(volumes, bassDb, trebleDb, hiddenRacks, settings, lcdColor, recordingNoticeShown, lastFolder, proxy, size);
+        return new AudioPreferences(volumes, bassDb, trebleDb, hiddenRacks, settings, lcdColor, recordingNoticeShown, lastFolder, size);
     }
 
     public AudioPreferences withLcdColor(String color) {
-        return new AudioPreferences(volumes, bassDb, trebleDb, hiddenRacks, recording, color, recordingNoticeShown, lastFolder, proxy, size);
+        return new AudioPreferences(volumes, bassDb, trebleDb, hiddenRacks, recording, color, recordingNoticeShown, lastFolder, size);
     }
 
     public AudioPreferences withRecordingNoticeShown() {
-        return new AudioPreferences(volumes, bassDb, trebleDb, hiddenRacks, recording, lcdColor, true, lastFolder, proxy, size);
+        return new AudioPreferences(volumes, bassDb, trebleDb, hiddenRacks, recording, lcdColor, true, lastFolder, size);
     }
 
     public AudioPreferences withLastFolder(Path folder) {
-        return new AudioPreferences(volumes, bassDb, trebleDb, hiddenRacks, recording, lcdColor, recordingNoticeShown, folder, proxy, size);
+        return new AudioPreferences(volumes, bassDb, trebleDb, hiddenRacks, recording, lcdColor, recordingNoticeShown, folder, size);
     }
 
     public AudioPreferences withSize(int percent) {
-        return new AudioPreferences(volumes, bassDb, trebleDb, hiddenRacks, recording, lcdColor, recordingNoticeShown, lastFolder, proxy, percent);
+        return new AudioPreferences(volumes, bassDb, trebleDb, hiddenRacks, recording, lcdColor, recordingNoticeShown, lastFolder, percent);
     }
 
-    public AudioPreferences withProxy(ProxySettings value) {
-        return new AudioPreferences(volumes, bassDb, trebleDb, hiddenRacks, recording, lcdColor, recordingNoticeShown, lastFolder, value, size);
-    }
 }
