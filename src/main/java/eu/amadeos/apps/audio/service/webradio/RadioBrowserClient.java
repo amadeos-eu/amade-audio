@@ -1,5 +1,6 @@
 package eu.amadeos.apps.audio.service.webradio;
 
+import eu.amadeos.commons.net.Network;
 import eu.amadeos.apps.audio.domain.Station;
 import eu.amadeos.commons.json.Json;
 import org.slf4j.Logger;
@@ -30,7 +31,7 @@ public final class RadioBrowserClient {
             "https://de1.api.radio-browser.info", "https://de2.api.radio-browser.info",
             "https://fi1.api.radio-browser.info", "https://nl1.api.radio-browser.info");
 
-    private final HttpClient http = eu.amadeos.apps.audio.service.net.NetworkProxy.INSTANCE.httpClient()
+    private final HttpClient http = Network.proxy().httpClient()
             .connectTimeout(Duration.ofSeconds(5))
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();

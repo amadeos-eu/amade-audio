@@ -1,15 +1,12 @@
 package eu.amadeos.apps.audio.ui.options;
 
 import eu.amadeos.apps.audio.domain.AudioPreferences;
-import eu.amadeos.apps.audio.domain.ProxySettings;
 import eu.amadeos.apps.audio.domain.RecordingSettings;
-import eu.amadeos.apps.audio.service.net.NetworkProxy;
 import eu.amadeos.commons.i18n.Texts;
 import eu.amadeos.apps.audio.ui.widget.Scale;
 import eu.amadeos.commons.i18n.LanguageChooser;
 import eu.amadeos.commons.i18n.LocaleSettings;
 import eu.amadeos.commons.i18n.Messages;
-import eu.amadeos.commons.swing.EdtExecutor;
 
 import static eu.amadeos.commons.i18n.Texts.tr;
 
@@ -17,13 +14,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.concurrent.ExecutorService;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 /**
  * Settings with a Category menu, as in the CDE applications: Recording, Display (with the language) and
- * Network. Pages are named by id ({@code Recording}, {@code Display}, {@code Network}) and shown translated.
+ * Network, which only shows the proxy of the desktop and the way to Settings &gt; Network. Pages are named by id
+ * ({@code Recording}, {@code Display}, {@code Network}) and shown translated.
  */
 public final class OptionsDialog extends JDialog {
     /** LCD colour ids as stored in audio.conf; the names come from {@code options.lcd.<id>}. */
@@ -39,32 +35,17 @@ public final class OptionsDialog extends JDialog {
     private final JSpinner maxMinutes = new JSpinner(new SpinnerNumberModel(120, 0, 24 * 60, 15));
     private final JComboBox<String> lcdColor = new JComboBox<>(LCD_COLORS);
     private final JComboBox<Integer> size = new JComboBox<>();
-    private final JRadioButton proxySystem = new JRadioButton(tr("options.network.system"));
-    private final JRadioButton proxyNone = new JRadioButton(tr("options.network.none"));
-    private final JRadioButton proxyManual = new JRadioButton(tr("options.network.manual"));
-    private final JTextField proxyHost = new JTextField(22);
-    private final JSpinner proxyPort = new JSpinner(new SpinnerNumberModel(3128, 1, 65535, 1));
-    private final JTextField proxyUser = new JTextField(16);
-    private final JPasswordField proxyPassword = new JPasswordField(16);
-    private final JTextField noProxy = new JTextField(30);
-    private final JLabel testResult = new JLabel(" ");
-    private final BiFunction<ProxySettings, String, String> tester;
-    private final ExecutorService executor;
-    private final EdtExecutor edt;
     private final LanguageChooser language;
 
     /**
-     * @param apply  receives the new settings and the proxy password (for the keyring)
-     * @param tester tries proxy settings, returns a message; called on the executor
+     * @param currentProxy    the proxy in use, e.g. {@code proxy.example:3128} or "direct connection"
+     * @param networkSettings opens Settings &gt; Network; null outside amadeOS
+     * @param apply           receives the new settings
      */
     public OptionsDialog(Window owner, AudioPreferences prefs, String page, String currentProxy,
-                         BiConsumer<AudioPreferences, String> apply, BiFunction<ProxySettings, String, String> tester,
-                         ExecutorService executor, EdtExecutor edt, LocaleSettings locales) {
+                         Runnable networkSettings, Consumer<AudioPreferences> apply, LocaleSettings locales) {
         super(owner, tr("options.title"), ModalityType.APPLICATION_MODAL);
         language = new LanguageChooser(locales, Messages.commons(Texts.messages().locale()));
-        this.tester = tester;
-        this.executor = executor;
-        this.edt = edt;
         RecordingSettings r = prefs.recording();
         directory.setText(r.directory().toString());
         pattern.setText(r.pattern());
@@ -89,7 +70,7 @@ public final class OptionsDialog extends JDialog {
 
         pages.add(recordingPage(), "Recording");
         pages.add(displayPage(), "Display");
-        pages.add(networkPage(prefs.proxy(), currentProxy), "Network");
+        pages.add(networkPage(currentProxy, networkSettings), "Network");
         category.addActionListener(e -> cards.show(pages, (String) category.getSelectedItem()));
         category.setSelectedItem(page != null && (page.equals("Display") || page.equals("Network")) ? page : "Recording");
         cards.show(pages, (String) category.getSelectedItem());
@@ -115,8 +96,7 @@ public final class OptionsDialog extends JDialog {
                     (Integer) maxMinutes.getValue());
             String color = LCD_COLORS[Math.max(0, lcdColor.getSelectedIndex())];
             int newSize = (Integer) size.getSelectedItem();
-            apply.accept(prefs.withRecording(settings).withLcdColor(color).withProxy(proxySettings()).withSize(newSize),
-                    new String(proxyPassword.getPassword()));
+            apply.accept(prefs.withRecording(settings).withLcdColor(color).withSize(newSize));
             dispose();
             boolean told = applyLanguage(locales);
             if (newSize != prefs.size() && !told) {
@@ -216,103 +196,31 @@ public final class OptionsDialog extends JDialog {
         return form;
     }
 
-    /** Password currently in use, shown masked so the user can keep or change it. */
-    public void setProxyPassword(String password) {
-        proxyPassword.setText(password == null ? "" : password);
-    }
-
-    private JPanel networkPage(ProxySettings proxy, String currentProxy) {
-        ButtonGroup group = new ButtonGroup();
-        for (JRadioButton b : new JRadioButton[]{proxySystem, proxyNone, proxyManual}) group.add(b);
-        switch (proxy.mode()) {
-            case NONE -> proxyNone.setSelected(true);
-            case MANUAL -> proxyManual.setSelected(true);
-            default -> proxySystem.setSelected(true);
-        }
-        proxyHost.setText(proxy.host());
-        proxyPort.setValue(proxy.port());
-        proxyUser.setText(proxy.user());
-        noProxy.setText(proxy.noProxy());
-        for (JRadioButton b : new JRadioButton[]{proxySystem, proxyNone, proxyManual}) b.addActionListener(e -> enableProxyFields());
-        enableProxyFields();
-
-        NetworkProxy detected = new NetworkProxy(System.getenv());
-        detected.configure(new ProxySettings(ProxySettings.Mode.SYSTEM, "", 0, "", ""), "");
-        JLabel systemHint = new JLabel(tr("options.network.found", detected.describe()));
-        systemHint.setFont(systemHint.getFont().deriveFont(Font.PLAIN, 11f));
-
-        JPanel hostRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        hostRow.add(proxyHost);
-        JLabel portLabel = new JLabel(tr("options.network.port"));
-        portLabel.setLabelFor(proxyPort);
-        hostRow.add(portLabel);
-        hostRow.add(proxyPort);
-        JButton test = new JButton(tr("options.network.test"));
-        test.addActionListener(e -> {
-            test.setEnabled(false);
-            testResult.setText(tr("options.network.testing"));
-            ProxySettings candidate = proxySettings();
-            String password = new String(proxyPassword.getPassword());
-            executor.execute(() -> {
-                String result = tester.apply(candidate, password);
-                edt.execute(() -> {
-                    testResult.setText(result);
-                    test.setEnabled(true);
-                    pack();
-                });
-            });
-        });
-        JLabel noProxyHint = new JLabel(tr("options.network.no-proxy-hint"));
-        noProxyHint.setFont(noProxyHint.getFont().deriveFont(Font.PLAIN, 11f));
-        JLabel inUse = new JLabel(tr("options.network.in-use", currentProxy));
-        inUse.setFont(inUse.getFont().deriveFont(Font.PLAIN, 11f));
-
+    private JPanel networkPage(String currentProxy, Runnable networkSettings) {
         JPanel form = new JPanel(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
         c.insets = new Insets(4, 4, 4, 4);
-        c.anchor = GridBagConstraints.WEST;
+        c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.HORIZONTAL;
         c.gridx = 0;
-        c.gridwidth = 2;
+        c.weightx = 1;
         c.gridy = 0;
-        form.add(proxySystem, c);
+        form.add(new JLabel(tr("options.network.now", currentProxy)), c);
         c.gridy = 1;
-        c.insets = new Insets(0, 28, 6, 4);
-        form.add(systemHint, c);
-        c.insets = new Insets(4, 4, 4, 4);
-        c.gridy = 2;
-        form.add(proxyNone, c);
+        form.add(new JLabel("<html><body style='width: 320px'>"
+                + tr(networkSettings != null ? "options.network.desktop" : "options.network.other") + "</body></html>"), c);
+        if (networkSettings != null) {
+            JButton open = new JButton(tr("options.network.open"));
+            open.addActionListener(e -> networkSettings.run());
+            JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            row.add(open);
+            c.gridy = 2;
+            form.add(row, c);
+        }
         c.gridy = 3;
-        form.add(proxyManual, c);
-        c.gridwidth = 1;
-        row(form, c, 4, "      " + tr("options.network.host"), hostRow);
-        row(form, c, 5, "      " + tr("options.network.user"), proxyUser);
-        row(form, c, 6, "      " + tr("options.network.password"), proxyPassword);
-        row(form, c, 7, "      " + tr("options.network.no-proxy"), noProxy);
-        row(form, c, 8, "", noProxyHint);
-        JPanel testRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        testRow.add(test);
-        testRow.add(testResult);
-        c.gridy = 9;
-        c.gridx = 0;
-        c.gridwidth = 2;
-        c.insets = new Insets(12, 4, 4, 4);
-        form.add(testRow, c);
-        c.gridy = 10;
-        c.insets = new Insets(4, 4, 4, 4);
-        form.add(inUse, c);
+        c.weighty = 1;
+        form.add(Box.createVerticalGlue(), c);
         return form;
-    }
-
-    private void enableProxyFields() {
-        boolean manual = proxyManual.isSelected();
-        for (JComponent f : new JComponent[]{proxyHost, proxyPort, proxyUser, proxyPassword, noProxy}) f.setEnabled(manual);
-    }
-
-    private ProxySettings proxySettings() {
-        ProxySettings.Mode mode = proxyManual.isSelected() ? ProxySettings.Mode.MANUAL
-                : proxyNone.isSelected() ? ProxySettings.Mode.NONE : ProxySettings.Mode.SYSTEM;
-        return new ProxySettings(mode, proxyHost.getText(), (Integer) proxyPort.getValue(), proxyUser.getText(), noProxy.getText());
     }
 
     private static void row(JPanel form, GridBagConstraints c, int y, String label, JComponent field) {

@@ -1,5 +1,6 @@
 package eu.amadeos.apps.audio.service.metadata;
 
+import eu.amadeos.commons.net.Network;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -16,7 +17,7 @@ public interface HttpFetcher {
     Optional<byte[]> get(URI uri, String accept) throws IOException;
 
     static HttpFetcher system() {
-        HttpClient client = eu.amadeos.apps.audio.service.net.NetworkProxy.INSTANCE.httpClient()
+        HttpClient client = Network.proxy().httpClient()
                 .connectTimeout(Duration.ofSeconds(8))
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();

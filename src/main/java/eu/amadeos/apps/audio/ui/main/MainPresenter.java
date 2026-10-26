@@ -7,7 +7,6 @@ import eu.amadeos.apps.audio.domain.SourceId;
 import eu.amadeos.apps.audio.repository.PreferencesStore;
 import eu.amadeos.apps.audio.service.PlaybackCoordinator;
 import eu.amadeos.apps.audio.service.engine.AudioEngine;
-import eu.amadeos.apps.audio.service.net.NetworkProxy;
 import eu.amadeos.commons.desktop.PasswordStore;
 import eu.amadeos.apps.audio.ui.options.OptionsDialog;
 import eu.amadeos.apps.audio.ui.playlist.PlaylistPanel;
@@ -18,17 +17,25 @@ import eu.amadeos.apps.audio.ui.rack.webradio.WebRadioPresenter;
 import eu.amadeos.apps.audio.ui.widget.LcdPalette;
 import eu.amadeos.apps.audio.ui.widget.Ticker;
 import eu.amadeos.commons.i18n.LocaleSettings;
+import eu.amadeos.commons.net.Network;
+import eu.amadeos.commons.net.ProxySettings;
+import eu.amadeos.commons.net.ProxyStore;
 import eu.amadeos.commons.swing.EdtExecutor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
@@ -37,6 +44,7 @@ import java.util.concurrent.ExecutorService;
  * racks, and handles options, about and quitting. Runs on the EDT.
  */
 public final class MainPresenter {
+    private static final Logger LOG = LoggerFactory.getLogger(MainPresenter.class);
     private final PlaybackCoordinator coordinator;
     private final AudioEngine engine;
     private final MixerPresenter mixer;
@@ -70,14 +78,14 @@ public final class MainPresenter {
         this.passwords = passwords;
     }
 
-    /** Key of the proxy password in the keyring. */
+    /** Key of the proxy password of earlier versions in the program's keyring. */
     static final String PROXY_PASSWORD = "proxy";
 
     /** Builds and shows the window; arguments are files or folders to play. */
     public void start(List<String> args) {
         EdtExecutor.requireEdt();
         LcdPalette.setSetting(preferences.current().lcdColor());
-        applyProxy();
+        moveProxyToDesktop();
         header = new HeaderRack(this, this::isLit);
         playlist.addView(SourceId.CD, cd.header(), cd.listView());
         playlist.addView(SourceId.PLAYER, player.header(), player.listView());
@@ -164,37 +172,49 @@ public final class MainPresenter {
         }
     }
 
-    /** Applies the saved proxy now and the password from the keyring when it has been read. */
-    private void applyProxy() {
-        var proxy = preferences.current().proxy();
-        NetworkProxy.INSTANCE.configure(proxy, "");
-        if (proxy.user().isEmpty()) return;
+    // --8<-- [start:move-proxy]
+    /**
+     * Earlier versions had a proxy of their own. Moves it to Settings &gt; Network once, unless the desktop has a
+     * proxy setting already; Audio's keyring entry goes, the desktop's keyring has the password now.
+     */
+    private void moveProxyToDesktop() {
+        Optional<ProxySettings> legacy = preferences.legacyProxy();
+        if (legacy.isEmpty()) return;
         executor.execute(() -> {
-            String password = passwords.lookup(PROXY_PASSWORD).orElse("");
-            NetworkProxy.INSTANCE.configure(preferences.current().proxy(), password);
+            ProxyStore store = Network.store();
+            if (!store.exists()) {
+                String password = legacy.get().user().isEmpty() ? "" : passwords.lookup(PROXY_PASSWORD).orElse("");
+                store.write(legacy.get(), password);
+                LOG.info("Moved the proxy of Audio Station to Settings > Network");
+            }
+            passwords.delete(PROXY_PASSWORD);
+            preferences.update(p -> p); // saves audio.conf without the old proxy
         });
     }
+    // --8<-- [end:move-proxy]
 
     void openOptions(String page) {
-        OptionsDialog dialog = new OptionsDialog(window, preferences.current(), page, NetworkProxy.INSTANCE.describe(),
-                (prefs, proxyPassword) -> {
+        String proxy = Network.proxy().describe().orElse(tr("proxy.direct"));
+        Runnable networkSettings = desktopSettings().map(command -> (Runnable) () -> {
+            try {
+                new ProcessBuilder(command, "network").start();
+            } catch (IOException e) {
+                LOG.warn("Cannot open Settings > Network: {}", e.toString());
+            }
+        }).orElse(null);
+        OptionsDialog dialog = new OptionsDialog(window, preferences.current(), page, proxy, networkSettings,
+                prefs -> {
                     preferences.update(p -> prefs);
                     LcdPalette.setSetting(prefs.lcdColor());
                     window.repaint();
-                    NetworkProxy.INSTANCE.configure(prefs.proxy(), proxyPassword);
-                    executor.execute(() -> {
-                        if (proxyPassword.isEmpty() || prefs.proxy().user().isEmpty()) passwords.delete(PROXY_PASSWORD);
-                        else passwords.store(PROXY_PASSWORD, "amade-audio proxy " + prefs.proxy().host(), proxyPassword);
-                    });
-                }, (candidate, password) -> NetworkProxy.INSTANCE.test(candidate, password), executor, edt, locales);
-        dialog.setProxyPassword(proxyPasswordForDialog());
+                }, locales);
         dialog.setVisible(true);
     }
 
-    private String proxyPasswordForDialog() {
-        var current = NetworkProxy.INSTANCE.endpoint(true);
-        return preferences.current().proxy().mode() == eu.amadeos.apps.audio.domain.ProxySettings.Mode.MANUAL
-                ? current.map(NetworkProxy.Endpoint::password).orElse("") : "";
+    /** {@code amadeos-settings}, if this runs on amadeOS. */
+    private static Optional<String> desktopSettings() {
+        Path settings = Path.of("/usr/bin/amadeos-settings");
+        return Files.isExecutable(settings) ? Optional.of(settings.toString()) : Optional.empty();
     }
 
     void minimize() {
