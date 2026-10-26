@@ -76,19 +76,14 @@ Recordings are for private use only; amade-audio says so before the first record
 
 ### Proxy
 
-Behind a proxy, open the menu (☰) → *Settings...* → category *Network*:
+amade-audio uses the proxy of the desktop. On amadeOS it is set in *Settings → Network*; menu (☰) →
+*Settings...* → category *Network* shows the proxy in use and opens that page. Outside amadeOS the proxy
+comes from `http_proxy`/`https_proxy` or, when they are not set, from the operating system (amade-commons
+`eu.amadeos.commons.net`).
 
-- **Use the system proxy** (default): `https_proxy`, `http_proxy`, `all_proxy` and `no_proxy` from
-  the environment (also in upper case), e.g. `http://user:password@proxy.example:3128`.
-- **No proxy**: always connect directly.
-- **Manual proxy**: host and port for HTTP and HTTPS, optional user name and password, and hosts or
-  domains reached directly (`localhost, .intranet.example`). The password is kept in the keyring
-  (Secret Service via `secret-tool`), not in `audio.conf`.
-
-*Test Connection* tries the entered settings against radio-browser.info before saving them. The proxy
-applies to everything amade-audio fetches: radio streams and playlists, radio-browser.info,
-MusicBrainz, the Cover Art Archive and station logos. Basic authentication also works for HTTPS
-(the JDK switches it off for tunnels by default; amade-audio switches it back on).
+The proxy applies to everything amade-audio fetches: radio streams and playlists, radio-browser.info,
+MusicBrainz, the Cover Art Archive and station logos. A proxy set in Audio's own Network page of earlier
+versions is moved to *Settings → Network* once.
 
 ### Languages
 
@@ -118,7 +113,6 @@ only the CD rack uses native code through JNA: libcdio on Linux, kernel32 IOCTLs
 | `service.cd` | `LibCdioDrive` (libcdio and libcdio-paranoia via JNA), `WindowsCdDrive` (`IOCTL_CDROM_READ_TOC_EX` and `IOCTL_CDROM_RAW_READ` via JNA, no error correction), `DiscId`, `CdPcmSource` |
 | `service.metadata` | `MusicBrainzClient`, `CdMetadataService`, `ArtworkService`, `MetadataCache` |
 | `service.mixer` | `SoundServer`: master, microphone and output through `wpctl` / `pactl` |
-| `service.net` | `NetworkProxy`: proxy selector and authenticator for all connections (system, none, manual) |
 | `service` | `PlaybackCoordinator` (active device) |
 | `ui.main` | frameless `MainWindow`, `HeaderRack`, `MainPresenter` |
 | `ui.rack.mixer`, `.cd`, `.player`, `.webradio` | rack panel, playlist view and presenter per device |
