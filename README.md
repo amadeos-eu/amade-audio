@@ -1,6 +1,6 @@
 # amade-audio
 
-**amade-audio** is the Audio Station of the [amadeOS](https://github.com/datazuul/amadeos) desktop: a
+**amade-audio** is the Audio Station of the [amadeOS](https://github.com/amadeos-eu/amadeos) desktop: a
 rack-style player for audio CDs, music files and internet radio in Java Swing, inspired by the
 hardware-like players of the 1990s and drawn in the colours of the current amadeOS desktop theme.
 
@@ -96,9 +96,9 @@ test checks that every translation is complete.
 
 ## Architecture
 
-Java 25, Swing, Guice; same structure as [amade-pad](https://github.com/datazuul/amade-pad) and
-[amade-mail](https://github.com/datazuul/amade-mail). Theme, Motif look and start-up come from
-[amade-commons](https://github.com/datazuul/amade-commons). Playback is pure Java (Java Sound);
+Java 25, Swing, Guice; same structure as [amade-pad](https://github.com/amadeos-eu/amade-pad) and
+[amade-mail](https://github.com/amadeos-eu/amade-mail). Theme, Motif look and start-up come from
+[amade-commons](https://github.com/amadeos-eu/amade-commons). Playback is pure Java (Java Sound);
 only the CD rack uses native code through JNA: libcdio on Linux, kernel32 IOCTLs on Windows.
 
 | Package | Content |

@@ -11,7 +11,7 @@ import java.util.Optional;
 
 /** HTTP GET for the metadata services; replaced by a fake in tests. */
 public interface HttpFetcher {
-    String USER_AGENT = "amade-audio/0.1.0 ( https://github.com/datazuul/amade-audio )";
+    String USER_AGENT = "amade-audio/0.1.0 ( https://github.com/amadeos-eu/amade-audio )";
 
     /** The body, or empty for 404; other errors throw. */
     Optional<byte[]> get(URI uri, String accept) throws IOException;

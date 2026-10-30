@@ -56,8 +56,8 @@
     <category>Player</category>
   </categories>
 
-  <url type="homepage">https://github.com/datazuul/amade-audio</url>
-  <url type="bugtracker">https://github.com/datazuul/amade-audio/issues</url>
+  <url type="homepage">https://github.com/amadeos-eu/amade-audio</url>
+  <url type="bugtracker">https://github.com/amadeos-eu/amade-audio/issues</url>
   <developer id="eu.amadeos">
     <name>amadeOS Project</name>
   </developer>
@@ -69,7 +69,7 @@
       <caption xml:lang="fr">Les racks et la liste de lecture</caption>
       <caption xml:lang="es">Los racks y la lista de reproducción</caption>
       <caption xml:lang="it">I rack e la playlist</caption>
-      <image>https://raw.githubusercontent.com/datazuul/amade-audio/main/docs/screenshots/amade-audio.png</image>
+      <image>https://raw.githubusercontent.com/amadeos-eu/amade-audio/main/docs/screenshots/amade-audio.png</image>
     </screenshot>
   </screenshots>
 

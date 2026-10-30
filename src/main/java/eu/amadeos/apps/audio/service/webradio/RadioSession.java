@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public final class RadioSession implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(RadioSession.class);
-    static final String USER_AGENT = "amade-audio/0.1 (amadeOS; +https://github.com/datazuul/amade-audio)";
+    static final String USER_AGENT = "amade-audio/0.1 (amadeOS; +https://github.com/amadeos-eu/amade-audio)";
     private static final int MAX_RETRIES = 5;
 
     /** Events from the downloader thread. */

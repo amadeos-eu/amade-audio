@@ -223,7 +223,7 @@ public final class MainPresenter {
 
     void about() {
         Icon icon = window.getIconImages().isEmpty() ? null : new ImageIcon(window.getIconImages().get(0));
-        JOptionPane.showMessageDialog(window, tr("about.text") + "\nhttps://github.com/datazuul/amade-audio",
+        JOptionPane.showMessageDialog(window, tr("about.text") + "\nhttps://github.com/amadeos-eu/amade-audio",
                 tr("about.title"), JOptionPane.INFORMATION_MESSAGE, icon);
     }
 
