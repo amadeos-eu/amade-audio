@@ -22,8 +22,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * The CD drive through libcdio (via JNA). Audio is read with libcdio-paranoia for error correction
- * when it is installed, otherwise with plain sector reads.
+ * The CD drive through libcdio (via JNA). Playback reads sectors directly, like a CD player does; only a chunk
+ * the drive cannot read that way goes through libcdio-paranoia (when installed) with a few retries, before it
+ * plays as silence. Full paranoia on every sector is far too slow for real-time playback: it re-reads and
+ * compares overlapping blocks, which made playback stall every few seconds, and on copy-protected discs with
+ * deliberately damaged sectors it never got past the first second.
  */
 public final class LibCdioDrive implements CdDrive {
     private static final Logger LOG = LoggerFactory.getLogger(LibCdioDrive.class);
@@ -49,7 +52,7 @@ public final class LibCdioDrive implements CdDrive {
         this.cdda = p == null ? null : d;
         this.paranoia = p;
         if (cdio == null) LOG.info("libcdio is not installed: the CD rack stays empty");
-        else if (paranoia == null) LOG.info("libcdio-paranoia is not installed: reading CDs without error correction");
+        else if (paranoia == null) LOG.info("libcdio-paranoia is not installed: unreadable sectors play as silence");
     }
 
     static String defaultDevice() {
@@ -134,16 +137,7 @@ public final class LibCdioDrive implements CdDrive {
         if (!isAvailable()) throw new IOException("No CD drive");
         int start = track.lba() + Math.max(0, Math.min(sectorOffset, track.sectors()));
         int end = track.lba() + track.sectors();
-        CdPcmSource.SectorReader reader = null;
-        if (paranoia != null) {
-            try {
-                reader = new ParanoiaReader();
-            } catch (IOException | RuntimeException | UnsatisfiedLinkError e) {
-                LOG.warn("libcdio-paranoia failed, reading without error correction: {}", e.toString());
-            }
-        }
-        if (reader == null) reader = new PlainReader();
-        return new CdPcmSource(reader, start, end);
+        return new CdPcmSource(new PlayReader(), start, end);
     }
 
     @Override
@@ -162,38 +156,60 @@ public final class LibCdioDrive implements CdDrive {
         return s == null ? "" : s.strip();
     }
 
-    /** Plain reads with libcdio, retried three times; unreadable sectors play as silence. */
-    private final class PlainReader implements CdPcmSource.SectorReader {
+    /**
+     * Direct reads with libcdio; a chunk that fails twice goes to libcdio-paranoia, opened on first need. Only
+     * the reader thread of {@link CdPcmSource} calls it, and it closes it when it is done.
+     */
+    private final class PlayReader implements CdPcmSource.SectorReader {
         private final Pointer handle;
         private Memory memory;
+        private ParanoiaReader fallback;
+        private boolean fallbackFailed;
 
-        PlainReader() throws IOException {
+        PlayReader() throws IOException {
             handle = cdio.cdio_open(device, LibCdio.DRIVER_UNKNOWN);
             if (handle == null) throw new IOException("Cannot open " + device);
         }
 
         @Override
-        public void read(int lba, int sectors, byte[] destination) throws IOException {
+        public void read(int lba, int sectors, byte[] destination) {
             int bytes = sectors * CdTrack.BYTES_PER_SECTOR;
             if (memory == null || memory.size() < bytes) memory = new Memory(bytes);
-            for (int attempt = 0; attempt < 3; attempt++) {
+            for (int attempt = 0; attempt < 2; attempt++) {
                 if (cdio.cdio_read_audio_sectors(handle, memory, lba - LEAD_IN, sectors) == 0) {
                     memory.read(0, destination, 0, bytes);
                     return;
                 }
             }
+            ParanoiaReader p = paranoia();
+            if (p != null) {
+                p.read(lba, sectors, destination);
+                return;
+            }
             LOG.warn("Cannot read sectors {}..{}; playing silence", lba, lba + sectors - 1);
             Arrays.fill(destination, 0, bytes, (byte) 0);
         }
 
+        private ParanoiaReader paranoia() {
+            if (fallback != null || fallbackFailed || paranoia == null) return fallback;
+            try {
+                fallback = new ParanoiaReader();
+            } catch (IOException | RuntimeException | UnsatisfiedLinkError e) {
+                LOG.warn("libcdio-paranoia failed, unreadable sectors play as silence: {}", e.toString());
+                fallbackFailed = true;
+            }
+            return fallback;
+        }
+
         @Override
         public void close() {
+            if (fallback != null) fallback.close();
             cdio.cdio_destroy(handle);
         }
     }
 
-    /** Error-correcting reads with libcdio-paranoia, one sector at a time. */
-    private final class ParanoiaReader implements CdPcmSource.SectorReader {
+    /** Error-correcting reads with libcdio-paranoia, one sector at a time, with a few retries per sector. */
+    private final class ParanoiaReader {
         private final Pointer drive;
         private final Pointer state;
         private int position = -1;
@@ -213,8 +229,7 @@ public final class LibCdioDrive implements CdDrive {
             paranoia.cdio_paranoia_modeset(state, LibCdioParanoia.MODE_DEFAULT);
         }
 
-        @Override
-        public void read(int lba, int sectors, byte[] destination) throws IOException {
+        void read(int lba, int sectors, byte[] destination) {
             int lsn = lba - LEAD_IN;
             if (lsn != position) {
                 paranoia.cdio_paranoia_seek(state, lsn, LibCdioParanoia.SEEK_SET);
@@ -222,7 +237,7 @@ public final class LibCdioDrive implements CdDrive {
             }
             boolean swap = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
             for (int i = 0; i < sectors; i++) {
-                Pointer data = paranoia.cdio_paranoia_read(state, null);
+                Pointer data = paranoia.cdio_paranoia_read_limited(state, null, LibCdioParanoia.RETRIES);
                 int at = i * CdTrack.BYTES_PER_SECTOR;
                 if (data == null) {
                     Arrays.fill(destination, at, at + CdTrack.BYTES_PER_SECTOR, (byte) 0);
@@ -240,8 +255,7 @@ public final class LibCdioDrive implements CdDrive {
             }
         }
 
-        @Override
-        public void close() {
+        void close() {
             paranoia.cdio_paranoia_free(state);
             cdda.cdio_cddap_close(drive);
         }

@@ -18,7 +18,7 @@ buttons show or hide the racks, and the LED in a button marks the active device.
 | Rack | What it does |
 |------|--------------|
 | **Mixer** | A fader per device (CD, Player, Web), microphone level, output device (speakers, headphones, HDMI, ...), bass and treble, and the master volume of PipeWire. Mute silences all devices. |
-| **CD** | Plays audio CDs: on Linux through libcdio, with error correction by libcdio-paranoia when it is installed; on Windows through the system's own CD-ROM driver, with no extra libraries. Titles from CD-Text or [MusicBrainz](https://musicbrainz.org), cover from the [Cover Art Archive](https://coverartarchive.org). |
+| **CD** | Plays audio CDs, reading a few seconds ahead so a slow drive does not interrupt the music: on Linux through libcdio, with libcdio-paranoia (when installed) for sectors the drive cannot read directly; on Windows through the system's own CD-ROM driver, with no extra libraries. Titles from CD-Text or [MusicBrainz](https://musicbrainz.org), cover from the [Cover Art Archive](https://coverartarchive.org). |
 | **Player** | Plays MP3, Ogg Vorbis, AAC, FLAC, WAV/AIFF and MIDI files; position slider, 16-band spectrum. Files and folders can be dropped onto the playlist. |
 | **Web Radio** | Internet radio as in [dz-radio](https://github.com/datazuul/dz-radio): favourites, search, genres and countries from [radio-browser.info](https://www.radio-browser.info), stream titles, level meters, and recording. *Stations...* opens the station list with the favourites. |
 
@@ -149,7 +149,7 @@ launcher, `gradle run`, the tests and the jar manifest add
 The Debian package recommends:
 
 - `libcdio19t64 | libcdio19`, `libcdio-paranoia2t64 | libcdio-paranoia2`, `libcdio-cdda2t64 | libcdio-cdda2` — audio CDs
-  (without them the CD rack stays empty; without paranoia CDs are read without error correction)
+  (without them the CD rack stays empty; without paranoia unreadable sectors play as silence)
 - `fluid-soundfont-gm` — a General MIDI SoundFont; otherwise Gervill's built-in sounds are used
 - `pulseaudio-utils` (`pactl`) and WirePlumber (`wpctl`) — master volume, microphone and output selection
 - `eject` — fallback for the Eject button

@@ -38,7 +38,7 @@ class CdTest {
 
     @Test
     void cdSourceReadsTheSectorRange() throws Exception {
-        List<int[]> reads = new ArrayList<>();
+        List<int[]> reads = java.util.Collections.synchronizedList(new ArrayList<>());
         CdPcmSource source = new CdPcmSource(new CdPcmSource.SectorReader() {
             @Override
             public void read(int lba, int sectors, byte[] destination) {
@@ -65,6 +65,56 @@ class CdTest {
         assertEquals(1000, reads.get(0)[0]);
         assertEquals(1026, reads.get(1)[0]);
         assertEquals(4, reads.get(1)[1]);
+    }
+
+    @Test
+    void closingWhileTheDriveReadsLetsTheReaderThreadCloseIt() throws Exception {
+        var inRead = new java.util.concurrent.CountDownLatch(1);
+        var release = new java.util.concurrent.CountDownLatch(1);
+        var readerClosed = new java.util.concurrent.atomic.AtomicBoolean();
+        var readWhileClosed = new java.util.concurrent.atomic.AtomicBoolean();
+        CdPcmSource source = new CdPcmSource(new CdPcmSource.SectorReader() {
+            @Override
+            public void read(int lba, int sectors, byte[] destination) throws java.io.IOException {
+                if (readerClosed.get()) readWhileClosed.set(true);
+                inRead.countDown();
+                try {
+                    release.await();
+                } catch (InterruptedException e) {
+                    throw new java.io.IOException(e);
+                }
+            }
+
+            @Override
+            public void close() {
+                readerClosed.set(true);
+            }
+        }, 1000, 2000);
+        assertTrue(inRead.await(5, java.util.concurrent.TimeUnit.SECONDS));
+        source.close();
+        source.close();
+        assertFalse(readerClosed.get(), "the drive must not be closed while a read is running");
+        release.countDown();
+        assertTrue(source.awaitClosed(5000));
+        assertTrue(readerClosed.get());
+        assertFalse(readWhileClosed.get());
+        assertEquals(-1, source.read(new byte[64], 0, 64));
+    }
+
+    @Test
+    void aReadErrorEndsPlaybackWithTheError() {
+        CdPcmSource source = new CdPcmSource(new CdPcmSource.SectorReader() {
+            @Override
+            public void read(int lba, int sectors, byte[] destination) throws java.io.IOException {
+                throw new java.io.IOException("drive gone");
+            }
+
+            @Override
+            public void close() {
+            }
+        }, 1000, 2000);
+        var e = assertThrows(java.io.IOException.class, () -> source.read(new byte[64], 0, 64));
+        assertEquals("drive gone", e.getMessage());
     }
 
     @Test
