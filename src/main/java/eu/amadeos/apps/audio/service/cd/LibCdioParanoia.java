@@ -8,6 +8,8 @@ interface LibCdioParanoia extends Library {
     /** Full paranoia except "never skip": like cdparanoia's default, gives up on hopeless sectors. */
     int MODE_DEFAULT = 0xFF & ~0x20;
     int SEEK_SET = 0;
+    /** Retries per sector for {@link #cdio_paranoia_read_limited}; paranoia's own default is 20. */
+    int RETRIES = 3;
 
     Pointer cdio_paranoia_init(Pointer drive);
 
@@ -19,6 +21,9 @@ interface LibCdioParanoia extends Library {
 
     /** One sector of 1176 native-endian 16-bit samples; the callback may be null. */
     Pointer cdio_paranoia_read(Pointer paranoia, Pointer callback);
+
+    /** Like {@link #cdio_paranoia_read} but gives up on a sector after {@code maxRetries}. */
+    Pointer cdio_paranoia_read_limited(Pointer paranoia, Pointer callback, int maxRetries);
 
     /** libcdio-cdda, the drive layer paranoia reads through. */
     interface Cdda extends Library {
