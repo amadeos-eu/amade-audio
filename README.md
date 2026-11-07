@@ -8,7 +8,7 @@ hardware-like players of the 1990s and drawn in the colours of the current amade
 
 > Status: early development.
 
-![Audio Station in the CDE Desert theme](docs/screenshot-desert.png)
+![Audio Station in the Horizon look](docs/screenshots/amade-audio.png)
 
 ## The racks
 
@@ -44,8 +44,6 @@ Rack fronts, bevels, rack frame, lists and the logo use the colours of the deskt
 Style Manager and change with it immediately. The LCDs stay black; their glow follows the theme
 (amber in *CDE Desert*, blue in *CDE Brocade* and *Dark Slate*, green otherwise) or a colour chosen
 in *Options → Display*.
-
-![Audio Station in the Dark Slate theme](docs/screenshot-dark-slate.png)
 
 ### CD titles and covers
 
