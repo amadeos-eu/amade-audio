@@ -35,11 +35,11 @@
       <li xml:lang="fr">Lecteur CD avec les titres des morceaux depuis Internet</li>
       <li xml:lang="es">Reproductor de CD con los títulos de las pistas desde Internet</li>
       <li xml:lang="it">Lettore CD con i titoli dei brani da Internet</li>
-      <li>MP3, OGG, FLAC, WAV, AAC and MIDI files with a playlist</li>
-      <li xml:lang="de">MP3-, OGG-, FLAC-, WAV-, AAC- und MIDI-Dateien mit Wiedergabeliste</li>
-      <li xml:lang="fr">Fichiers MP3, OGG, FLAC, WAV, AAC et MIDI avec une liste de lecture</li>
-      <li xml:lang="es">Archivos MP3, OGG, FLAC, WAV, AAC y MIDI con una lista de reproducción</li>
-      <li xml:lang="it">File MP3, OGG, FLAC, WAV, AAC e MIDI con una playlist</li>
+      <li>MP3, OGG, FLAC, WAV, AAC and MIDI files and tracker modules (MOD, XM, S3M, IT) with a playlist</li>
+      <li xml:lang="de">MP3-, OGG-, FLAC-, WAV-, AAC- und MIDI-Dateien sowie Tracker-Module (MOD, XM, S3M, IT) mit Wiedergabeliste</li>
+      <li xml:lang="fr">Fichiers MP3, OGG, FLAC, WAV, AAC et MIDI et modules de tracker (MOD, XM, S3M, IT) avec une liste de lecture</li>
+      <li xml:lang="es">Archivos MP3, OGG, FLAC, WAV, AAC y MIDI y módulos de tracker (MOD, XM, S3M, IT) con una lista de reproducción</li>
+      <li xml:lang="it">File MP3, OGG, FLAC, WAV, AAC e MIDI e moduli tracker (MOD, XM, S3M, IT) con una playlist</li>
       <li>Internet radio stations, with recording</li>
       <li xml:lang="de">Internetradiosender, mit Aufnahme</li>
       <li xml:lang="fr">Stations de radio Internet, avec enregistrement</li>

@@ -33,6 +33,9 @@ jobs:
         with:
           # Plain actions/cache instead of the proprietary enhanced cache that is the v6 default.
           cache-provider: basic
+      # The tracker module tests play through libopenmpt and skip themselves without it.
+      - name: Install libopenmpt
+        run: sudo apt-get update -q && sudo apt-get install -y -q libopenmpt0t64
       # The Swing integration tests skip themselves without a display, so run under Xvfb.
       - name: Test
         run: xvfb-run --auto-servernum ./gradlew test --no-daemon

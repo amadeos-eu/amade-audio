@@ -3,6 +3,7 @@ package eu.amadeos.apps.audio.service.player;
 import static eu.amadeos.commons.i18n.Texts.tr;
 
 import eu.amadeos.apps.audio.domain.PlaylistEntry;
+import eu.amadeos.apps.audio.service.decode.ModuleRenderer;
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.tag.FieldKey;
@@ -14,8 +15,10 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.logging.Level;
 
-/** Reads tags, length and embedded cover art with jaudiotagger. */
+/** Reads tags, length and embedded cover art with jaudiotagger; title and length of modules with libopenmpt. */
 public class TagReader {
+    private final ModuleRenderer modules = new ModuleRenderer();
+
     static {
         // jaudiotagger logs every frame it parses through java.util.logging.
         java.util.logging.Logger.getLogger("org.jaudiotagger").setLevel(Level.SEVERE);
@@ -24,6 +27,12 @@ public class TagReader {
     /** The entry with tags; just the file name if the file has none or cannot be read (e.g. MIDI). */
     public PlaylistEntry read(Path file) {
         if (PlaylistEntry.formatOf(file).equals("MIDI")) return PlaylistEntry.of(file);
+        if (PlaylistEntry.isModule(file)) {
+            // A module's "artist" is rarely set; trackers kept the composer in the sample names instead.
+            return modules.info(file)
+                    .map(m -> new PlaylistEntry(file, m.title(), m.artist(), null, null, m.length(), null))
+                    .orElseGet(() -> PlaylistEntry.of(file));
+        }
         try {
             AudioFile audio = AudioFileIO.read(file.toFile());
             Tag tag = audio.getTag();
@@ -38,7 +47,7 @@ public class TagReader {
 
     /** Cover art stored in the file's tags. */
     public Optional<eu.amadeos.apps.audio.domain.Artwork> embeddedArtwork(Path file) {
-        if (PlaylistEntry.formatOf(file).equals("MIDI")) return Optional.empty();
+        if (PlaylistEntry.formatOf(file).equals("MIDI") || PlaylistEntry.isModule(file)) return Optional.empty();
         try {
             Tag tag = AudioFileIO.read(file.toFile()).getTag();
             if (tag == null) return Optional.empty();
