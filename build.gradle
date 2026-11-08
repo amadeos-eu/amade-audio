@@ -47,7 +47,7 @@ dependencies {
     runtimeOnly 'com.tianscar.javasound:javasound-aac:0.9.8'
     runtimeOnly 'org.jflac:jflac-codec:1.5.2'
 
-    // Audio CDs: libcdio and libcdio-paranoia through JNA (no JNI code to build).
+    // Audio CDs (libcdio, libcdio-paranoia) and tracker modules (libopenmpt) through JNA (no JNI code to build).
     implementation 'net.java.dev.jna:jna:5.14.0'
 
     // Tags and embedded cover art of audio files; tags of split radio recordings.
@@ -182,12 +182,12 @@ Section: sound
 Priority: optional
 Architecture: all
 Depends: openjdk-25-jre | java-runtime (>= 25)
-Recommends: libcdio19t64 | libcdio19, libcdio-paranoia2t64 | libcdio-paranoia2, libcdio-cdda2t64 | libcdio-cdda2, fluid-soundfont-gm, pulseaudio-utils, eject
+Recommends: libcdio19t64 | libcdio19, libcdio-paranoia2t64 | libcdio-paranoia2, libcdio-cdda2t64 | libcdio-cdda2, fluid-soundfont-gm, libopenmpt0t64 | libopenmpt0, pulseaudio-utils, eject
 Maintainer: amadeOS Project <developers@datazuul.com>
 Description: Rack-style audio station for amadeOS
  A Motif/CDE-styled audio station for the amadeOS desktop with racks for
- audio CDs, local files (MP3, Ogg Vorbis, AAC, FLAC, WAV, MIDI) and
- internet radio, a mixer, a playlist that follows the active device,
+ audio CDs, local files (MP3, Ogg Vorbis, AAC, FLAC, WAV, MIDI, tracker
+ modules such as MOD, XM, S3M and IT) and internet radio, a mixer, a playlist that follows the active device,
  cover art from MusicBrainz / Cover Art Archive and stream recording.
 """
 

@@ -19,7 +19,7 @@ buttons show or hide the racks, and the LED in a button marks the active device.
 |------|--------------|
 | **Mixer** | A fader per device (CD, Player, Web), microphone level, output device (speakers, headphones, HDMI, ...), bass and treble, and the master volume of PipeWire. Mute silences all devices. |
 | **CD** | Plays audio CDs, reading a few seconds ahead so a slow drive does not interrupt the music: on Linux through libcdio, with libcdio-paranoia (when installed) for sectors the drive cannot read directly; on Windows through the system's own CD-ROM driver, with no extra libraries. Titles from CD-Text or [MusicBrainz](https://musicbrainz.org), cover from the [Cover Art Archive](https://coverartarchive.org). |
-| **Player** | Plays MP3, Ogg Vorbis, AAC, FLAC, WAV/AIFF and MIDI files; position slider, 16-band spectrum. Files and folders can be dropped onto the playlist. |
+| **Player** | Plays MP3, Ogg Vorbis, AAC, FLAC, WAV/AIFF and MIDI files and tracker modules (MOD, XM, S3M, IT and older formats, through libopenmpt); position slider, 16-band spectrum. Files and folders can be dropped onto the playlist. |
 | **Web Radio** | Internet radio as in [dz-radio](https://github.com/datazuul/dz-radio): favourites, search, genres and countries from [radio-browser.info](https://www.radio-browser.info), stream titles, level meters, and recording. *Stations...* opens the station list with the favourites. |
 
 Below the racks, the **playlist panel** shows the list of the active device: the player's playlist,
@@ -97,14 +97,15 @@ test checks that every translation is complete.
 Java 25, Swing, Guice; same structure as [amade-pad](https://github.com/amadeos-eu/amade-pad) and
 [amade-mail](https://github.com/amadeos-eu/amade-mail). Theme, Motif look and start-up come from
 [amade-commons](https://github.com/amadeos-eu/amade-commons). Playback is pure Java (Java Sound);
-only the CD rack uses native code through JNA: libcdio on Linux, kernel32 IOCTLs on Windows.
+only the CD rack and tracker modules use native code through JNA: libcdio on Linux, kernel32 IOCTLs on
+Windows, and libopenmpt for modules.
 
 | Package | Content |
 |---------|---------|
 | `domain` | `SourceId`, `Station`, `PlaylistEntry`, `CdToc`, `CdTrack`, `AlbumInfo`, `Artwork`, `AudioLevels`, `RecordingSettings`, `AudioPreferences`, ... |
 | `repository` | `PreferencesRepository` / `PreferencesStore` (`~/.config/amadeos/audio/audio.conf`) |
 | `service.engine` | `AudioEngine` with an `AudioChannel` per device: plays a `PcmSource` on a virtual thread, applies fader, mute and tone control (`ToneControl`, biquad shelves), measures levels and spectrum (`LevelAnalyzer`, FFT) |
-| `service.decode` | `DecoderFactory`: MP3, Ogg Vorbis, AAC/HE-AAC (SBR rate correction from dz-radio) and FLAC through Java Sound service providers; `MidiRenderer` renders MIDI with Gervill so it goes through the mixer too |
+| `service.decode` | `DecoderFactory`: MP3, Ogg Vorbis, AAC/HE-AAC (SBR rate correction from dz-radio) and FLAC through Java Sound service providers; `MidiRenderer` renders MIDI with Gervill so it goes through the mixer too; `ModuleRenderer` renders tracker modules (MOD, XM, S3M, IT, ...) with libopenmpt via JNA, seeking by time |
 | `service.webradio` | from dz-radio: `IcyInputStream`, `BufferedRadioInputStream`, `PlaylistParser`, stream sniffing; `RadioSession` (download, reconnect, recording tap), `RadioBrowserClient` (mirror failover), `StationRepository` (favourites; takes over dz-radio's `channels.json`) |
 | `service.recording` | `StreamRecorder` (split at frame boundaries, `.part` files, maximum duration), `Mp3Tagger` |
 | `service.player` | `Playlist` (shuffle, repeat), `M3uPlaylist`, `TagReader` (jaudiotagger), `AudioFiles` |
@@ -149,6 +150,9 @@ The Debian package recommends:
 - `libcdio19t64 | libcdio19`, `libcdio-paranoia2t64 | libcdio-paranoia2`, `libcdio-cdda2t64 | libcdio-cdda2` — audio CDs
   (without them the CD rack stays empty; without paranoia unreadable sectors play as silence)
 - `fluid-soundfont-gm` — a General MIDI SoundFont; otherwise Gervill's built-in sounds are used
+- `libopenmpt0t64 | libopenmpt0` — tracker modules (`.mod`, `.xm`, `.s3m`, `.it`, `.mptm`, `.mtm`, `.669`,
+  `.stm`, `.med`, `.okt`, `.far`, `.ult`, `.umx`, and Amiga-style `mod.name`); without it the player says
+  the library is missing and plays everything else
 - `pulseaudio-utils` (`pactl`) and WirePlumber (`wpctl`) — master volume, microphone and output selection
 - `eject` — fallback for the Eject button
 
@@ -171,6 +175,8 @@ The `windows` job in CI builds the MSI and a portable ZIP of the app image on ev
 in the `amade-audio-windows` artifact of the workflow run. The installer is not code-signed, so
 SmartScreen warns on first start. On Windows the CD rack reads audio CDs through the system's
 CD-ROM driver; master volume is the application's own fader, and the output list stays empty.
+Tracker modules play only if `libopenmpt.dll` (from [lib.openmpt.org](https://lib.openmpt.org/libopenmpt/))
+is on the `PATH` or next to the program; the installer does not include it yet.
 
 ## Roadmap
 

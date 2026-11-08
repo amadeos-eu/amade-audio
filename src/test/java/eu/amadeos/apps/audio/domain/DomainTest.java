@@ -18,6 +18,20 @@ class DomainTest {
     }
 
     @Test
+    void trackerModulesAreRecognised() {
+        assertEquals("XM", PlaylistEntry.formatOf(Path.of("/mods/song.xm")));
+        assertTrue(PlaylistEntry.isModule(Path.of("song.MOD")));
+        assertTrue(PlaylistEntry.isModule(Path.of("song.s3m")));
+        assertTrue(PlaylistEntry.isModule(Path.of("song.it")));
+        // Amiga style: the type in front of the name
+        assertTrue(PlaylistEntry.isModule(Path.of("/aminet/mod.Space Journey")));
+        assertEquals("MOD", PlaylistEntry.formatOf(Path.of("/aminet/mod.Space Journey")));
+        assertFalse(PlaylistEntry.isModule(Path.of("mod.mix.mp3")));
+        assertEquals("MP3", PlaylistEntry.formatOf(Path.of("mod.mix.mp3")));
+        assertFalse(PlaylistEntry.isModule(Path.of("song.mp3")));
+    }
+
+    @Test
     void displayTitleFallsBackToTheFileName() {
         assertEquals("01 Intro", PlaylistEntry.of(Path.of("/m/01 Intro.mp3")).displayTitle());
         PlaylistEntry tagged = new PlaylistEntry(Path.of("/m/x.mp3"), " Intro ", "", null, null, null, null);

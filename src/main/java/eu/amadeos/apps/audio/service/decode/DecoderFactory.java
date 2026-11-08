@@ -19,7 +19,7 @@ import java.nio.file.Path;
 /**
  * Opens files and network streams as 16-bit PCM. MP3, Ogg Vorbis, AAC and FLAC come from the Java Sound
  * service providers on the class path (mp3spi, vorbisspi, javasound-aac, jflac-codec), WAV/AIFF/AU from
- * the JDK, MIDI from {@link MidiRenderer}.
+ * the JDK, MIDI from {@link MidiRenderer}, tracker modules (MOD, XM, S3M, IT) from {@link ModuleRenderer}.
  */
 public final class DecoderFactory {
     private static final Logger LOG = LoggerFactory.getLogger(DecoderFactory.class);
@@ -43,19 +43,23 @@ public final class DecoderFactory {
     }
 
     private final MidiRenderer midi;
+    private final ModuleRenderer modules;
 
     public DecoderFactory() {
-        this(new MidiRenderer());
+        this(new MidiRenderer(), new ModuleRenderer());
     }
 
-    public DecoderFactory(MidiRenderer midi) {
+    public DecoderFactory(MidiRenderer midi, ModuleRenderer modules) {
         this.midi = midi;
+        this.modules = modules;
     }
 
-    /** Opens a local file; MIDI files are rendered with the software synthesizer. */
+    // --8<-- [start:open-file]
+    /** Opens a local file; MIDI files are rendered with the software synthesizer, modules with libopenmpt. */
     public PcmSource openFile(Path file) throws IOException {
         withDecoderClassLoader();
         if (PlaylistEntry.formatOf(file).equals("MIDI")) return midi.open(file);
+        if (PlaylistEntry.isModule(file)) return modules.open(file);
         try {
             AudioInputStream encoded = AudioSystem.getAudioInputStream(file.toFile());
             return new AudioInputStreamSource(toPcm16(encoded));
@@ -63,6 +67,7 @@ public final class DecoderFactory {
             throw new IOException("Unsupported audio format: " + file.getFileName(), e);
         }
     }
+    // --8<-- [end:open-file]
 
     /**
      * Decodes a network stream whose codec was detected beforehand.
