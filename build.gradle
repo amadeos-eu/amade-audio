@@ -151,8 +151,12 @@ tasks.register('deb') {
         }
 
         def launcher = new File(binDir, 'amade-audio')
+        // The options all amadeOS programs share (heap, garbage collector) come first from the argument file
+        // amadeos-session installs; the options after it win over them.
         launcher.text = """#!/bin/sh
-exec /usr/bin/java --add-exports java.desktop/com.sun.media.sound=ALL-UNNAMED -jar /opt/amade-audio/amade-audio.jar "\$@"
+OPTIONS=/etc/amadeos/java/app.options
+[ -r "\$OPTIONS" ] || OPTIONS=/dev/null
+exec /usr/bin/java "@\$OPTIONS" -Xmx384m --add-exports java.desktop/com.sun.media.sound=ALL-UNNAMED -jar /opt/amade-audio/amade-audio.jar "\$@"
 """
         launcher.setExecutable(true, false)
 
