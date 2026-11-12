@@ -2,6 +2,7 @@ package eu.amadeos.apps.audio.ui.rack.player;
 
 import static eu.amadeos.commons.i18n.Texts.tr;
 
+import eu.amadeos.apps.audio.domain.PlaylistEntry;
 import eu.amadeos.apps.audio.ui.widget.LcdPanel;
 import eu.amadeos.apps.audio.ui.widget.Led;
 import eu.amadeos.apps.audio.ui.widget.DeviceLabel;
@@ -21,7 +22,7 @@ import java.util.Map;
 
 /** The file player rack: Power and Open, file window with format badges and position, LCD, transport. */
 public final class PlayerRack extends RackPanel {
-    static final String[] FORMATS = {"MP3", "OGG", "FLAC", "WAV", "AAC", "MIDI"};
+    static final String[] FORMATS = {"MP3", "OGG", "FLAC", "WAV", "AAC", "MIDI", "MOD"};
 
     final JToggleButton power = Led.toggle(tr("rack.power"), Led.GREEN);
     final JButton open = new JButton(tr("player.open"));
@@ -117,10 +118,24 @@ public final class PlayerRack extends RackPanel {
 
     /** Highlights the badge of the playing format. */
     void setFormat(String format) {
+        String lit = badgeFor(format);
         badges.forEach((name, badge) -> {
-            badge.putClientProperty("amade.on", name.equals(format));
+            badge.putClientProperty("amade.on", name.equals(lit));
             badge.repaint();
         });
+    }
+
+    /**
+     * The badge that stands for a format: AIFF and AU light WAV (uncompressed), every tracker module (XM, S3M,
+     * IT, ...) lights MOD, so the row stays seven badges long.
+     */
+    static String badgeFor(String format) {
+        if (format == null) return "";
+        return switch (format) {
+            case "AIFF", "AU" -> "WAV";
+            default -> PlaylistEntry.MODULE_EXTENSIONS.contains(format.toLowerCase(java.util.Locale.ROOT))
+                    ? "MOD" : format;
+        };
     }
 
     void setDimmed(boolean dimmed) {
